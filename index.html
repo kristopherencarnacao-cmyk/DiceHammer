@@ -252,6 +252,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .g-dots{display:flex;justify-content:center;gap:6px;padding:8px 0 0}
 .g-dots button{width:18px;height:4px;padding:0;border:0;background:var(--phos-dim)}
 .g-dots button[aria-selected="true"]{background:var(--brass);box-shadow:0 0 8px var(--glow);width:28px}
+.g-skip{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px 0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.g-skip .chk{width:18px;height:18px;color:var(--phos-ink)}
+.g-skip .chk svg{width:12px;height:12px}
 .g-nav{display:flex;justify-content:space-between;gap:8px;padding:14px 18px 0}
 .g-nav .btn{height:36px;padding-inline:16px}
 .g-nav .btn::before{content:"[ ";opacity:.6}.g-nav .btn::after{content:" ]";opacity:.6}
@@ -629,7 +632,9 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
 
   // ---- guide: how fair is the roll? (opens once on first visit, then from ? Guide) ----
-  const GKEY='dicehammer-guide-seen-v1';
+  // the guide opens on every launch unless 'Don’t show on launch' is ticked
+  const GKEY='dicehammer-guide-skip';
+  const skipNext=()=>{try{return localStorage.getItem(GKEY)==='1';}catch(_){return false;}};
   const bars=(vals,cls,cap)=>{ // axis runs 16.4% to 17.0% on both charts so they compare directly
     const h=v=>((v-16.4)/0.6*100).toFixed(1);
     return '<div class="ga ga-bars '+cls+'" style="--fair:'+h(100/6)+'"><div class="gb-plot">'+vals.map(v=>'<div class="gb-col"><b>'+v.toFixed(2)+'</b><i style="--h:'+h(v)+'"></i></div>').join('')+
@@ -657,10 +662,11 @@ button{font:inherit;color:inherit;cursor:pointer}
     $('guide').innerHTML='<div class="g-head"><div><div class="k-lbl">Guide · '+(gi+1)+' of '+GUIDE.length+'</div><h2 id="g-title">'+s.t+'</h2></div><button class="btn g-x" aria-label="Close guide">✕</button></div>'+
       '<div class="g-slide" aria-hidden="true">'+s.art+'</div><p class="g-body" id="g-body">'+s.b+'</p><p class="g-cite">'+(s.cite||'')+'</p>'+
       '<div class="g-dots" role="tablist" aria-label="Guide steps">'+GUIDE.map((x,k)=>'<button role="tab" aria-selected="'+(k===gi)+'" aria-label="Step '+(k+1)+': '+x.t+'" data-g="'+k+'"></button>').join('')+'</div>'+
+      '<label class="g-skip"><button class="chk" role="checkbox" id="gSkipNext" aria-checked="'+skipNext()+'"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg></button><span>Don’t show on launch</span></label>'+
       '<div class="g-nav">'+(gi?'<button class="btn" data-g="'+(gi-1)+'">Back</button>':'<button class="btn" id="gSkip">Skip</button>')+
       '<button class="btn primary" '+(last?'id="gDone"':'data-g="'+(gi+1)+'"')+'>'+(last?'Start rolling':'Next')+'</button></div>';
     $('scrim').hidden=false; $('guide').hidden=false;
-    try{localStorage.setItem(GKEY,'1');}catch(_){}
+    $('guide').querySelector('#gSkipNext').onclick=e=>{const b=e.currentTarget, on=b.getAttribute('aria-checked')!=='true'; b.setAttribute('aria-checked',String(on)); try{on?localStorage.setItem(GKEY,'1'):localStorage.removeItem(GKEY);}catch(_){}};
     const g=$('guide');
     g.querySelector('.g-x').onclick=closeGuide;
     const sk=g.querySelector('#gSkip'); if(sk) sk.onclick=closeGuide;
@@ -680,7 +686,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   $('guideBtn').onclick=()=>openGuide(0);
 
   count=0; setCount(10); markFaces(); markCrit(); renderHistory(); fit();
-  if(!(()=>{try{return localStorage.getItem(GKEY);}catch(_){return '1';}})()) setTimeout(()=>openGuide(0),500);
+  if(!skipNext()) openGuide(0);
 })();
 </script>
 </body>
