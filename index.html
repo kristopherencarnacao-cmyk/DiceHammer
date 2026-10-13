@@ -245,8 +245,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .g-head h2{margin:4px 0 0;font:700 17px/1.25 var(--term);letter-spacing:.02em;color:var(--ink);text-wrap:balance}
 .g-x{margin-left:auto;flex:none;width:32px;height:32px;padding:0;font-size:14px}
 .g-slide{margin:4px 18px 0;height:160px;border:1px dashed var(--phos-dim);background:rgba(85,230,165,.03);position:relative;overflow:hidden;display:grid;place-items:center;animation:gIn .45s cubic-bezier(.2,.9,.25,1) both}
-.g-body{margin:12px 18px 4px;font-size:13.5px;line-height:1.55;color:var(--ink);min-height:9.3em;animation:gText .4s .12s both}
+.g-body{margin:12px 18px 4px;font-size:13.5px;line-height:1.55;color:var(--ink);min-height:7.75em;animation:gText .4s .12s both}
 .g-body b{color:var(--brass);font-weight:600}
+.g-cite{margin:0 18px;min-height:4.2em;font-size:10px;line-height:1.4;letter-spacing:.03em;color:var(--muted)}
+.g-cite a{color:var(--brass);text-decoration:underline;text-decoration-color:var(--phos-dim);text-underline-offset:2px}
 .g-dots{display:flex;justify-content:center;gap:6px;padding:8px 0 0}
 .g-dots button{width:18px;height:4px;padding:0;border:0;background:var(--phos-dim)}
 .g-dots button[aria-selected="true"]{background:var(--brass);box-shadow:0 0 8px var(--glow);width:28px}
@@ -642,9 +644,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   const GUIDE=[
     {t:'Welcome to DiceHammer',b:'A dice tray for big Warhammer rolls. Before you start, here is how fair each roll is.',
      art:'<div class="ga ga-welcome"><div class="gw-title">DICEHAMMER<i></i></div><div class="gw-dice"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>'},
-    {t:'Fairer than real dice',b:'Tests of real dice found some faces coming up more often, from tiny flaws and how they’re thrown. DiceHammer uses your device’s <b>secure random generator</b>: every face is <b>exactly 1 in 6</b>.',
+    {t:'Fairer than real dice',b:'Real dice favour some faces, and throws lean toward the side that starts face-up. DiceHammer’s <b>secure random generator</b> makes every face <b>exactly 1 in 6</b>.',
+     cite:'Sources: <a href="https://doi.org/10.1080/01621459.2025.2516210" target="_blank" rel="noopener">Bartoš et al., JASA, 2025</a> (350,757 coin flips) · <a href="https://doi.org/10.1063/1.4746038" target="_blank" rel="noopener">Kapitaniak et al., Chaos, 2012</a> (dice) · chart: <a href="https://chance.amstat.org/?p=1533" target="_blank" rel="noopener">Labby, CHANCE, 2009</a>',
      art:pairs([16.86,16.51,16.62,16.58,16.55,16.88],[16.67,16.68,16.69,16.65,16.65,16.66])},
-    {t:'Fair, just steadier',b:'Neither is “truly” random. A die is physics too quick to predict; the app is maths too secure to predict. Both are fair at the table, and the app never wobbles. Reopen this any time from <b>? Guide</b>.',
+    {t:'Fair, just steadier',b:'Neither is “truly” random: a die is physics too quick to predict, the app is maths too secure to predict. Both are fair; the app just never wobbles. Reopen this from <b>? Guide</b>.',
      art:'<div class="ga ga-vs"><div class="gv">'+dieArt+'<b>Die</b><span>physics</span></div><div class="gv-eq">≈</div><div class="gv"><div class="gv-chip"></div><b>App</b><span>secure maths</span></div></div>'}
   ];
   let gi=0, gReturn=null;
@@ -652,7 +655,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     if($('guide').hidden) gReturn=document.activeElement;
     gi=Math.max(0,Math.min(GUIDE.length-1,i)); const s=GUIDE[gi], last=gi===GUIDE.length-1;
     $('guide').innerHTML='<div class="g-head"><div><div class="k-lbl">Guide · '+(gi+1)+' of '+GUIDE.length+'</div><h2 id="g-title">'+s.t+'</h2></div><button class="btn g-x" aria-label="Close guide">✕</button></div>'+
-      '<div class="g-slide" aria-hidden="true">'+s.art+'</div><p class="g-body" id="g-body">'+s.b+'</p>'+
+      '<div class="g-slide" aria-hidden="true">'+s.art+'</div><p class="g-body" id="g-body">'+s.b+'</p><p class="g-cite">'+(s.cite||'')+'</p>'+
       '<div class="g-dots" role="tablist" aria-label="Guide steps">'+GUIDE.map((x,k)=>'<button role="tab" aria-selected="'+(k===gi)+'" aria-label="Step '+(k+1)+': '+x.t+'" data-g="'+k+'"></button>').join('')+'</div>'+
       '<div class="g-nav">'+(gi?'<button class="btn" data-g="'+(gi-1)+'">Back</button>':'<button class="btn" id="gSkip">Skip</button>')+
       '<button class="btn primary" '+(last?'id="gDone"':'data-g="'+(gi+1)+'"')+'>'+(last?'Start rolling':'Next')+'</button></div>';
