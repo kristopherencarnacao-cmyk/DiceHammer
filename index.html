@@ -71,9 +71,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pool{display:flex;flex-direction:column;gap:3px}
 .big{font-weight:700;font-size:var(--big,38px);height:var(--big,38px);line-height:var(--big,38px);font-variant-numeric:tabular-nums;white-space:nowrap}
 #count .n{display:inline-block;min-width:2ch;text-align:right}
-/* tray sizes: small 5×5, medium 8×8, large 16×16 */
+/* tray sizes: small 5×5, medium 8×8, large 12×12 */
 .grid[data-size="s"]{gap:6px}
-.grid[data-size="l"]{gap:2px;padding:6px}
+.grid[data-size="l"]{gap:3px;padding:7px}
 .grid[data-size="l"] .cell{padding:15%;gap:8%;border-radius:16%}
 body.size-l #count .n,body.size-l .stat .big{min-width:3ch}
 body.size-l .readout{--big:28px}
@@ -343,7 +343,7 @@ body.flicker::after{background:repeating-linear-gradient(180deg,rgba(0,0,0,.5) 0
 body.flicker .app{animation:crtFlicker .7s steps(1) both}
 @keyframes crtFlicker{0%{filter:brightness(1.5);transform:translateX(-2px)}12%{filter:brightness(.55);transform:translateX(2px)}24%{filter:brightness(1.3);transform:none}38%{filter:brightness(.75);transform:translate(1px,-1px)}52%{filter:brightness(1.15);transform:none}66%{filter:brightness(.85);transform:translateX(-1px)}80%{filter:brightness(1.05);transform:none}100%{filter:none;transform:none}}
 @media (prefers-reduced-motion:reduce){body.flicker .crt-band,body.flicker::after,body.flicker .app{animation:none}}
-/* ---- lite mode for the 16×16 tray: same look, far less work per frame ---- */
+/* ---- lite mode for the 12×12 tray: same look, far less work per frame ---- */
 /* one glitch on the whole tray instead of 256 separate ones */
 .grid.glitching{animation:trayGlitch .5s steps(1) infinite}
 @keyframes trayGlitch{0%{transform:none;filter:brightness(1.15)}25%{transform:translateX(-1px)}50%{transform:translateX(1px);filter:brightness(1.3)}75%{transform:none;filter:none}}
@@ -379,7 +379,7 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
       <div class="menu frame" id="menu" hidden>
         <button class="m-item" id="histBtn">Roll log <span class="n" id="histN">0</span></button>
         <button class="m-item" id="guideBtn" aria-haspopup="dialog">Guide <span class="n">?</span></button>
-        <div class="m-size"><div>Dice pool<small id="sizeNote">8×8 · up to 64</small></div><div class="m-seg" id="sizeSeg" role="radiogroup" aria-label="Dice pool size"><button role="radio" data-size="s" aria-label="Small, 5 by 5">S</button><button role="radio" data-size="m" aria-label="Medium, 8 by 8">M</button><button role="radio" data-size="l" aria-label="Large, 16 by 16">L</button></div></div>
+        <div class="m-size"><div>Dice pool<small id="sizeNote">8×8 · up to 64</small></div><div class="m-seg" id="sizeSeg" role="radiogroup" aria-label="Dice pool size"><button role="radio" data-size="s" aria-label="Small, 5 by 5">S</button><button role="radio" data-size="m" aria-label="Medium, 8 by 8">M</button><button role="radio" data-size="l" aria-label="Large, 12 by 12">L</button></div></div>
       </div>
     </div>
   </header>
@@ -475,8 +475,8 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
     for(let k=0;k<8;k++){const p=document.createElement('s'); p.style.setProperty('--a',(k*45+Math.random()*20-10)+'deg'); p.style.setProperty('--r',(r*(.7+Math.random()*.5))+'px'); s.appendChild(p);}
     c.appendChild(s); setTimeout(()=>s.remove(),800+delay);
   }
-  // tray size: small 5×5, medium 8×8 (default), large 16×16; kept on this device
-  const SIZES={s:5,m:8,l:16};
+  // tray size: small 5×5, medium 8×8 (default), large 12×12; kept on this device
+  const SIZES={s:5,m:8,l:12};
   let size='m'; try{const v=localStorage.getItem('dicehammer-size'); if(SIZES[v]) size=v;}catch(_){}
   let N=SIZES[size];
   const cells=[];
@@ -661,8 +661,8 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   function restore(id){
     const e=history.find(x=>x.id===id); if(!e||busy) return;
     target=e.target; markFaces(); crit=e.crit||6; markCrit();
-    if(e.rolls.length>N*N) setSize(Object.keys(SIZES).find(k=>SIZES[k]*SIZES[k]>=e.rolls.length),true);
-    rolls=e.rolls.slice(); count=rolls.length; slots=lineSlots(count);
+    if(e.rolls.length>N*N) setSize(Object.keys(SIZES).find(k=>SIZES[k]*SIZES[k]>=e.rolls.length)||'l',true);
+    rolls=e.rolls.slice(0,N*N); count=rolls.length; slots=lineSlots(count);
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
     const {hits,crits}=paintResult(null);
