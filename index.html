@@ -25,6 +25,8 @@
   --term:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono","Courier New",monospace;
 }
 html,body{height:100%;overflow:hidden}
+/* no double-tap zoom: fast taps on dice and buttons stay taps */
+html,body,button,.app{touch-action:manipulation}
 body{background-color:var(--ash);color:var(--ink);font-family:var(--term);font-size:14px;-webkit-tap-highlight-color:transparent;
   background-image:radial-gradient(ellipse 110% 70% at 50% 0%,rgba(60,140,110,.10),transparent 60%),radial-gradient(ellipse 120% 90% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
 /* CRT: scanlines, vignette and a slow sweep, never blocking input */
@@ -290,6 +292,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   const $=id=>document.getElementById(id);
   const grid=$('grid'), stage=$('stage'), facesEl=$('faces');
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // fallback for older iOS Safari, which can still zoom on a quick second tap
+  let lastTouch=0;
+  document.addEventListener('touchend',e=>{const t=Date.now(); if(t-lastTouch<350){e.preventDefault(); if(e.target.closest('button')) e.target.closest('button').click();} lastTouch=t;},{passive:false});
+  document.addEventListener('dblclick',e=>e.preventDefault());
   let count=10, target=null, rolls=[], busy=false, timer=null, fresh=null, action='Rolled', slots=[], crit=6;
 
   const setPips=(el,v)=>{const on=PIPS[v]; el.querySelectorAll('i').forEach((p,i)=>p.classList.toggle('s',on.includes(i)));};
