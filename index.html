@@ -452,7 +452,8 @@ button{font:inherit;color:inherit;cursor:pointer}
   function finish(){
     const idx=fresh||new Set(rolls.map((_,i)=>i)); fresh=null;
     const {hits,crits}=paintResult(idx), n=rolls.length;
-    $('hits').textContent=hits; $('crits').textContent=crits; $('fails').textContent=n-hits; tick();
+    // HITS = normal successes only; crits are counted separately, so hits + crit + fail = pool
+    $('hits').textContent=hits-crits; $('crits').textContent=crits; $('fails').textContent=n-hits; tick();
     $('sub').textContent=subText(hits,n);
     syncButtons(hits); busy=false;
     record(action);
@@ -469,7 +470,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); const {crits}=paintResult(null); syncButtons(count);
     if(count){
-      $('hits').textContent=count; $('crits').textContent=crits; $('fails').textContent=0; tick();
+      $('hits').textContent=count-crits; $('crits').textContent=crits; $('fails').textContent=0; tick();
       $('sub').textContent=(count===1?'die':'dice')+' left in pool';
       record('Removed fails');
     }else{
@@ -508,7 +509,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
     const {hits,crits}=paintResult(null);
-    $('hits').textContent=e.hitsText; $('crits').textContent=e.critsText!=null?e.critsText:crits; $('fails').textContent=e.failsText!=null?e.failsText:rolls.length-hits; tick(); $('sub').textContent=e.sub;
+    $('hits').textContent=hits-crits; $('crits').textContent=crits; $('fails').textContent=rolls.length-hits; tick(); $('sub').textContent=e.sub;
     syncButtons(hits); curId=id; renderHistory(); closeSheet();
   }
   const fmtTime=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
@@ -553,7 +554,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
     const {hits,crits}=paintResult(null);
     if(!$('res').classList.contains('idle')){
-      $('hits').textContent=hits; $('crits').textContent=crits; $('fails').textContent=rolls.length-hits; tick();
+      $('hits').textContent=hits-crits; $('crits').textContent=crits; $('fails').textContent=rolls.length-hits; tick();
       $('sub').textContent=subText(hits,rolls.length);
     }
     syncButtons(hits);
