@@ -795,6 +795,8 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   // random CRT flicker roughly once a minute (45–75 s apart), skipped when the tab is hidden or motion is reduced
   function flicker(){ if(reduce||document.hidden) return; const b=document.body; b.classList.remove('flicker'); void b.offsetWidth; b.classList.add('flicker'); setTimeout(()=>b.classList.remove('flicker'),750); }
   (function schedule(){ setTimeout(()=>{ flicker(); schedule(); }, 45000+Math.random()*30000); })();
+  // the action buttons above the dice (Sort, Re-roll 1s, Re-roll fails, Remove fails) also trigger the flicker
+  document.querySelector('.acts').addEventListener('click',e=>{ if(e.target.closest('button')) flicker(); /* disabled buttons never fire click, and the reroll handlers disable themselves before this runs */ });
 
   count=0; setCount(10); markFaces(); markCrit(); markSize(); renderHistory(); fit();
   if(!skipNext()) openGuide(0);
