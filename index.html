@@ -229,6 +229,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   <div class="bar">
     <div class="acts">
+      <button class="btn" id="sortBtn" disabled>Sort</button>
       <button class="btn" id="rerollOnes" disabled>Re-roll 1s</button>
       <button class="btn" id="rerollFails" disabled>Re-roll fails</button>
       <button class="btn" id="removeFails" disabled>Remove fails</button>
@@ -298,7 +299,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     $('res').classList.add('idle');
     $('hits').innerHTML=target?'Tap a target<br>to roll':'Pick a target<br>to roll';
     $('sub').textContent='';
-    $('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
+    $('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
   }
   // dice fill the tray in reading order; slots maps each die to its cell
   const lineSlots=n=>Array.from({length:n},(_,k)=>k);
@@ -342,7 +343,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       if((t+=60)>=620){clearInterval(timer); timer=null; idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
     },60);
   }
-  function lock(){$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
+  function lock(){$('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
   function roll(){
     if(busy||!count||!target) return; busy=true; action='Rolled';
     cells.forEach(c=>c.classList.remove('drop'));
@@ -376,7 +377,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   function syncButtons(hits){
     const n=rolls.length;
     $('rerollFails').disabled=!n||hits===n;
-    $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n;
+    $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n; $('sortBtn').disabled=n<2;
   }
   // newly added dice materialise in their slot showing a random resting face
   function showCount(){
@@ -421,6 +422,18 @@ button{font:inherit;color:inherit;cursor:pointer}
     }
   }
   $('removeFails').onclick=removeFails;
+
+  // reorder the tray highest to lowest; same dice, so the result and log entry stay the same
+  function sortDice(){
+    if(busy||rolls.length<2) return;
+    rolls.sort((a,b)=>b-a);
+    cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
+    paintResult(null);
+    if(!reduce) rolls.forEach((v,i)=>{const c=cells[slots[i]]; void c.offsetWidth; c.classList.add('land');});
+    const e=history.find(x=>x.id===curId);
+    if(e&&e.rolls.length===rolls.length){e.rolls=rolls.slice(); save(); renderHistory();}
+  }
+  $('sortBtn').onclick=sortDice;
 
   // ---- session log ----
   let history=[], curId=null;
