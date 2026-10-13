@@ -71,6 +71,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pool{display:flex;flex-direction:column;gap:3px}
 .big{font-weight:700;font-size:var(--big,38px);height:var(--big,38px);line-height:var(--big,38px);font-variant-numeric:tabular-nums;white-space:nowrap}
 #count .n{display:inline-block;min-width:2ch;text-align:right}
+/* tray sizes: small 5×5, medium 8×8, large 16×16 */
+.grid[data-size="s"]{gap:6px}
+.grid[data-size="l"]{gap:2px;padding:6px}
+.grid[data-size="l"] .cell{padding:15%;gap:8%;border-radius:16%}
+body.size-l #count .n,body.size-l .stat .big{min-width:3ch}
+body.size-l .readout{--big:28px}
+@media (max-width:380px){body.size-l .readout{--big:23px}body.size-l .stats{gap:10px}}
 .big small{font-size:13px;font-weight:600;color:var(--muted);margin-left:4px;letter-spacing:.1em}
 #count{color:var(--ink)}
 .right{flex:1;min-width:0;text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
@@ -122,7 +129,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* the tray */
 .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
-.grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;padding:8px;box-sizing:border-box;touch-action:none;user-select:none;-webkit-user-select:none;perspective:600px}
+.grid{--n:8;display:grid;grid-template-columns:repeat(var(--n),1fr);grid-template-rows:repeat(var(--n),1fr);gap:4px;padding:8px;box-sizing:border-box;touch-action:none;user-select:none;-webkit-user-select:none;perspective:600px}
 .cell{position:relative;border-radius:12%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6%;padding:18%;box-sizing:border-box;min-width:0;min-height:0;
   background:radial-gradient(circle,var(--phos-dim) 0 1.5px,transparent 2px);box-shadow:inset 0 0 0 1px rgba(85,230,165,.06);transition:opacity .2s}
 .cell i{border-radius:50%;visibility:hidden}
@@ -249,7 +256,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .menu-wrap{position:relative}
 .burger{display:inline-flex;flex-direction:column;gap:3px;margin-right:2px}.burger i{display:block;width:12px;height:2px;background:currentColor}
 #menuBtn[aria-expanded="true"]{background:var(--brass-soft);border-color:var(--brass);box-shadow:0 0 12px var(--glow-soft)}
-.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:180px;display:flex;flex-direction:column;padding:4px 6px;box-sizing:border-box;--bk:8px}
+.m-size{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 8px;border-top:1px dashed var(--phos-dim);font:600 11.5px/1 var(--term);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.m-size small{display:block;margin-top:5px;font-size:9.5px;color:var(--muted);letter-spacing:.06em}
+.m-seg{display:flex;border:1px solid var(--phos-dim)}
+.m-seg button{width:34px;height:30px;padding:0;background:transparent;border:0;border-left:1px solid var(--phos-dim);color:var(--muted);font:700 11px var(--term);letter-spacing:.06em}
+.m-seg button:first-child{border-left:0}
+.m-seg button:hover{color:var(--ink);background:var(--brass-soft)}
+.m-seg button[aria-checked="true"]{background:var(--brass);color:var(--phos-ink);box-shadow:0 0 10px var(--glow-soft)}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:230px;display:flex;flex-direction:column;padding:4px 6px;box-sizing:border-box;--bk:8px}
 .menu:not([hidden]){animation:menuIn .22s ease-out both}
 @keyframes menuIn{0%{opacity:0;transform:translateY(-6px)}45%{opacity:.7}60%{opacity:.3}100%{opacity:1;transform:none}}
 .m-item{display:flex;justify-content:space-between;align-items:center;gap:14px;background:transparent;border:0;border-bottom:1px dashed var(--phos-dim);padding:12px 8px;color:var(--ink);font:600 11.5px/1 var(--term);letter-spacing:.1em;text-transform:uppercase;text-align:left}
@@ -319,6 +333,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes gPulse{50%{box-shadow:0 0 18px var(--glow)}}
 .gv-eq{font-size:16px;color:var(--brass)}
 @media (prefers-reduced-motion:reduce){.guide:not([hidden]),.g-slide,.g-body,.ga,.ga *{animation:none!important}.gw-title{width:auto}}
+/* occasional CRT hiccup, about once a minute at random: heavy scanlines, a bright band rolling down and a brief jitter */
+.crt-band{position:fixed;left:0;right:0;top:-25%;height:22%;pointer-events:none;z-index:9997;opacity:0;
+  background:linear-gradient(180deg,transparent,rgba(85,230,165,.10) 45%,rgba(200,255,230,.16) 50%,rgba(85,230,165,.10) 55%,transparent)}
+body.flicker .crt-band{animation:bandRoll .7s linear both}
+@keyframes bandRoll{0%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(560%)}}
+body.flicker::after{background:repeating-linear-gradient(180deg,rgba(0,0,0,.5) 0 2px,transparent 2px 4px),radial-gradient(ellipse 120% 100% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);animation:scanJump .7s steps(1) both}
+@keyframes scanJump{0%{background-position:0 0,0 0}25%{background-position:0 2px,0 0}50%{background-position:0 1px,0 0}75%{background-position:0 3px,0 0}}
+body.flicker .app{animation:crtFlicker .7s steps(1) both}
+@keyframes crtFlicker{0%{filter:brightness(1.5);transform:translateX(-2px)}12%{filter:brightness(.55);transform:translateX(2px)}24%{filter:brightness(1.3);transform:none}38%{filter:brightness(.75);transform:translate(1px,-1px)}52%{filter:brightness(1.15);transform:none}66%{filter:brightness(.85);transform:translateX(-1px)}80%{filter:brightness(1.05);transform:none}100%{filter:none;transform:none}}
+@media (prefers-reduced-motion:reduce){body.flicker .crt-band,body.flicker::after,body.flicker .app{animation:none}}
 @media (max-height:620px){.big{font-size:30px}.readout{--big:30px}.die{max-width:42px}}
 @media (prefers-reduced-motion: reduce){
   body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
@@ -336,6 +360,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <div class="menu frame" id="menu" hidden>
         <button class="m-item" id="histBtn">Roll log <span class="n" id="histN">0</span></button>
         <button class="m-item" id="guideBtn" aria-haspopup="dialog">Guide <span class="n">?</span></button>
+        <div class="m-size"><div>Dice pool<small id="sizeNote">8×8 · up to 64</small></div><div class="m-seg" id="sizeSeg" role="radiogroup" aria-label="Dice pool size"><button role="radio" data-size="s" aria-label="Small, 5 by 5">S</button><button role="radio" data-size="m" aria-label="Medium, 8 by 8">M</button><button role="radio" data-size="l" aria-label="Large, 16 by 16">L</button></div></div>
       </div>
     </div>
   </header>
@@ -376,6 +401,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   </div>
 </main>
 
+<div class="crt-band" aria-hidden="true"></div>
 <div class="crt-glass" aria-hidden="true"><i class="crt-bulge"></i><i class="crt-glare"></i></div>
 <div class="scrim" id="scrim" hidden></div>
 <section class="guide frame" id="guide" hidden role="dialog" aria-modal="true" aria-labelledby="g-title" aria-describedby="g-body"></section>
@@ -430,12 +456,21 @@ button{font:inherit;color:inherit;cursor:pointer}
     for(let k=0;k<8;k++){const p=document.createElement('s'); p.style.setProperty('--a',(k*45+Math.random()*20-10)+'deg'); p.style.setProperty('--r',(r*(.7+Math.random()*.5))+'px'); s.appendChild(p);}
     c.appendChild(s); setTimeout(()=>s.remove(),800+delay);
   }
+  // tray size: small 5×5, medium 8×8 (default), large 16×16; kept on this device
+  const SIZES={s:5,m:8,l:16};
+  let size='m'; try{const v=localStorage.getItem('dicehammer-size'); if(SIZES[v]) size=v;}catch(_){}
+  let N=SIZES[size];
   const cells=[];
-  for(let i=0;i<64;i++){
-    const c=document.createElement('div'); c.className='cell';
-    c.innerHTML='<i></i>'.repeat(9)+SKULL;
-    grid.appendChild(c); cells.push(c);
+  function buildGrid(){
+    grid.innerHTML=''; cells.length=0;
+    grid.style.setProperty('--n',N); grid.dataset.size=size; document.body.classList.toggle('size-l',size==='l');
+    for(let i=0;i<N*N;i++){
+      const c=document.createElement('div'); c.className='cell';
+      c.innerHTML='<i></i>'.repeat(9)+SKULL;
+      grid.appendChild(c); cells.push(c);
+    }
   }
+  buildGrid();
   function tick(){['hits','crits','fails'].forEach(id=>{const h=$(id); h.classList.remove('tick'); void h.offsetWidth; if(!reduce) h.classList.add('tick');});}
   const subText=(hits,n)=>target+'+ hit · '+crit+'+ crit · avg '+(n*(7-Math.min(target,crit))/6).toFixed(1);
 
@@ -451,7 +486,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   // dice fill the tray in reading order; slots maps each die to its cell
   const lineSlots=n=>Array.from({length:n},(_,k)=>k);
   function setCount(n){
-    n=Math.max(1,Math.min(64,n));
+    n=Math.max(1,Math.min(N*N,n));
     if(n===count&&slots.length===n&&!rolls.length) return;
     count=n; slots=lineSlots(n);
     showCount(); clearRoll();
@@ -460,10 +495,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   grid.addEventListener('animationend',e=>{if(e.animationName==='mat') e.target.classList.remove('drop');});
   let dragging=false;
   function pick(e){
-    const r=grid.getBoundingClientRect(), pad=9, w=r.width-pad*2, h=r.height-pad*2;
-    const col=Math.max(0,Math.min(7,Math.floor((e.clientX-r.left-pad)/w*8)));
-    const row=Math.max(0,Math.min(7,Math.floor((e.clientY-r.top-pad)/h*8)));
-    setCount(row*8+col+1);
+    const r=grid.getBoundingClientRect(), pad=grid.clientLeft+parseFloat(getComputedStyle(grid).paddingLeft), w=r.width-pad*2, h=r.height-pad*2;
+    const col=Math.max(0,Math.min(N-1,Math.floor((e.clientX-r.left-pad)/w*N)));
+    const row=Math.max(0,Math.min(N-1,Math.floor((e.clientY-r.top-pad)/h*N)));
+    setCount(row*N+col+1);
   }
   $('minus').onclick=()=>setCount(count-1);
   $('plus').onclick=()=>setCount(count+1);
@@ -596,6 +631,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   function restore(id){
     const e=history.find(x=>x.id===id); if(!e||busy) return;
     target=e.target; markFaces(); crit=e.crit||6; markCrit();
+    if(e.rolls.length>N*N) setSize(Object.keys(SIZES).find(k=>SIZES[k]*SIZES[k]>=e.rolls.length),true);
     rolls=e.rolls.slice(); count=rolls.length; slots=lineSlots(count);
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
@@ -713,7 +749,24 @@ button{font:inherit;color:inherit;cursor:pointer}
   document.addEventListener('click',e=>{ if(!$('menu').hidden && !e.target.closest('.menu-wrap')) setMenu(false); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('menu').hidden){ setMenu(false); $('menuBtn').focus(); } });
 
-  count=0; setCount(10); markFaces(); markCrit(); renderHistory(); fit();
+  function markSize(){
+    $('sizeSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.size===size)));
+    $('sizeNote').textContent=N+'×'+N+' · up to '+N*N;
+  }
+  // changing size rebuilds the tray, keeps the pool if it still fits (otherwise trims it) and clears the current roll
+  function setSize(k,quiet){
+    if(!SIZES[k]||(k===size&&!quiet)||busy) return;
+    size=k; N=SIZES[k]; try{localStorage.setItem('dicehammer-size',k);}catch(_){}
+    buildGrid(); markSize(); fit();
+    const n=Math.min(count||1,N*N); count=0; slots=[]; setCount(n);
+  }
+  $('sizeSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) setSize(b.dataset.size);});
+
+  // random CRT flicker roughly once a minute (45–75 s apart), skipped when the tab is hidden or motion is reduced
+  function flicker(){ if(reduce||document.hidden) return; const b=document.body; b.classList.remove('flicker'); void b.offsetWidth; b.classList.add('flicker'); setTimeout(()=>b.classList.remove('flicker'),750); }
+  (function schedule(){ setTimeout(()=>{ flicker(); schedule(); }, 45000+Math.random()*30000); })();
+
+  count=0; setCount(10); markFaces(); markCrit(); markSize(); renderHistory(); fit();
   if(!skipNext()) openGuide(0);
 })();
 </script>
