@@ -633,7 +633,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     const n=rolls.length;
     $('rerollFails').disabled=!n||hits===n;
     $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n; $('sortBtn').disabled=n<2;
-    $('dupeBtn').disabled=!n||rolls.filter(isCrit).length<=duped||count>=N*N;
+    $('dupeBtn').disabled=!n||!rolls.some(isCrit)||count>=N*N;
   }
   // newly added dice materialise in their slot showing a random resting face
   function showCount(){
@@ -699,11 +699,10 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     $('lockBtn').setAttribute('aria-pressed',String(lockCrits)); $('lockState').textContent=lockCrits?'On':'Off';
     rolls.forEach((v,i)=>cells[slots[i]].classList.toggle('locked',lockCrits&&isCrit(v)));
   };
-  // Dupe crits: add one guaranteed normal hit for every crit in the tray that hasn't been duped yet
-  // (so crits that appear after Re-roll fails / Re-roll 1s can be duped too)
+  // Dupe crits: every press adds one guaranteed normal hit per crit in the tray (press twice for 'two extra hits per crit')
   function dupeCrits(){
     if(busy||!rolls.length) return;
-    const k=rolls.filter(isCrit).length-duped, add=Math.min(k,N*N-count);
+    const k=rolls.filter(isCrit).length, add=Math.min(k,N*N-count);
     if(!add) return;
     const f=Math.max(2,Math.min(6,target)), start=count;
     for(let j=0;j<add;j++) rolls.push(10+f);
