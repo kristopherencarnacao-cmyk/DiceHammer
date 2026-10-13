@@ -633,7 +633,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     const n=rolls.length;
     $('rerollFails').disabled=!n||hits===n;
     $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n; $('sortBtn').disabled=n<2;
-    $('dupeBtn').disabled=!n||!rolls.some(isCrit)||count>=N*N;
+    $('dupeBtn').disabled=!n||!rolls.some(isCrit)||(count>=N*N&&size==='l');
   }
   // newly added dice materialise in their slot showing a random resting face
   function showCount(){
@@ -702,7 +702,16 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   // Dupe crits: every press adds one guaranteed normal hit per crit in the tray (press twice for 'two extra hits per crit')
   function dupeCrits(){
     if(busy||!rolls.length) return;
-    const k=rolls.filter(isCrit).length, add=Math.min(k,N*N-count);
+    const k=rolls.filter(isCrit).length;
+    // not enough room: move up to the smallest tray that fits everything (or the largest), keeping the current dice
+    if(count+k>N*N&&size!=='l'){
+      const key=Object.keys(SIZES).find(x=>SIZES[x]*SIZES[x]>=count+k)||'l';
+      const saved=rolls.slice(), savedCount=count, savedDuped=duped;
+      setSize(key,true);
+      rolls=saved; count=savedCount; duped=savedDuped; slots=lineSlots(count);
+      grid.classList.add('rolled'); $('res').classList.remove('idle'); showCount(); paintResult(null);
+    }
+    const add=Math.min(k,N*N-count);
     if(!add) return;
     const f=Math.max(2,Math.min(6,target)), start=count;
     for(let j=0;j<add;j++) rolls.push(10+f);
