@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>DiceHammer</title>
+<style>
+/* Layout: one-screen auspex terminal — header strip, pool/result readout, bracketed 8×8 tray that fills spare height, control bar.
+   Deliberately one look, shared with Dominatus Codex: cold black, ash-white text, phosphor green as the only accent, blood red for 1s. */
+:root{
+  color-scheme:dark;
+  --ash:#05070a; --slab:#0e1217; --raise:#151a21; --ink:#dfe4ea; --muted:#8792a0; --rule:#232b35;
+  --brass:#55e6a5; --seal-hi:#8af5c4; --phos-deep:#2a9d6c; --brass-soft:#0b231b; --phos-dim:#1f5a45; --phos-ink:#02140d;
+  --danger:#e04652; --blood:#1f080c; --blood-hi:#45121a;
+  --glow:rgba(85,230,165,.45); --glow-soft:rgba(85,230,165,.18); --red-glow:rgba(224,70,82,.45); --deep-shadow:rgba(0,0,0,.6);
+  --term:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono","Courier New",monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{background-color:var(--ash);color:var(--ink);font-family:var(--term);font-size:14px;-webkit-tap-highlight-color:transparent;
+  background-image:radial-gradient(ellipse 110% 70% at 50% 0%,rgba(60,140,110,.10),transparent 60%),radial-gradient(ellipse 120% 90% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
+/* CRT: scanlines, vignette and a slow sweep, never blocking input */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px),radial-gradient(ellipse 120% 100% at 50% 50%,transparent 60%,rgba(0,0,0,.45) 100%);mix-blend-mode:multiply}
+body::before{content:"";position:fixed;left:0;right:0;top:-20%;height:20%;pointer-events:none;z-index:9998;
+  background:linear-gradient(180deg,transparent,rgba(85,230,165,.035),transparent);animation:sweep 7s linear infinite}
+@keyframes sweep{to{transform:translateY(600%)}}
+::selection{background:var(--brass);color:var(--phos-ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:1px solid var(--brass);outline-offset:3px;box-shadow:0 0 0 3px var(--glow-soft)}
+
+.app{height:100%;max-width:520px;margin:0 auto;padding-inline:16px;padding-block:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px}
+
+/* header strip */
+.mast{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);text-shadow:0 0 8px var(--glow)}
+.cursor{display:inline-block;width:.55em;height:.9em;margin-left:.2em;background:var(--brass);vertical-align:-.1em;box-shadow:0 0 8px var(--glow);animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.k-lbl{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.k-lbl::before{content:"// ";color:var(--phos-dim)}
+
+/* buttons: square, phosphor-lit */
+.btn{background:transparent;border:1px solid var(--phos-dim);border-radius:0;color:var(--brass);font:600 11px/1.15 var(--term);text-transform:uppercase;letter-spacing:.08em;transition:background .15s,box-shadow .15s,border-color .15s}
+.btn:hover:not(:disabled){background:var(--brass-soft);border-color:var(--brass);box-shadow:0 0 12px var(--glow-soft)}
+.btn:active:not(:disabled){background:var(--brass);color:var(--phos-ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:var(--phos-ink);box-shadow:0 0 14px var(--glow-soft)}
+.btn.primary:hover:not(:disabled){background:var(--seal-hi);border-color:var(--seal-hi)}
+.btn.primary:disabled{background:transparent;color:var(--muted);border-color:var(--phos-dim);box-shadow:none;opacity:.5}
+.hist{height:30px;padding-inline:10px;display:inline-flex;align-items:center;gap:8px}
+.hist::before{content:"[";opacity:.6}.hist::after{content:"]";opacity:.6}
+.hist .n{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* readout */
+.readout{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;min-height:58px}
+.left{display:flex;align-items:flex-end;gap:8px}
+.step{width:34px;height:34px;font-size:18px;font-weight:700;padding:0}
+.pool{display:flex;flex-direction:column;gap:3px}
+.big{font-weight:700;font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:13px;font-weight:600;color:var(--muted);margin-left:4px;letter-spacing:.1em}
+#count{color:var(--ink)}
+.right{flex:1;min-width:0;text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+#hits{color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(85,230,165,.8)}
+.right .sub{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.right .sub:not(:empty)::before{content:"> ";color:var(--brass)}
+.right.idle #hits{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-shadow:none;line-height:1.45}
+#hits.tick{animation:tick .4s steps(5) both}
+@keyframes tick{0%{opacity:.15}20%{opacity:1}40%{opacity:.45}60%{opacity:1}80%{opacity:.7}100%{opacity:1}}
+
+/* bracketed panel, as in the Codex */
+.frame{--fr:var(--brass);--bk:12px;--bt:2px;
+  background:
+    linear-gradient(var(--fr),var(--fr)) 0 0/var(--bk) var(--bt) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 0 0/var(--bt) var(--bk) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 100% 0/var(--bk) var(--bt) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 100% 0/var(--bt) var(--bk) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 0 100%/var(--bk) var(--bt) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 0 100%/var(--bt) var(--bk) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 100% 100%/var(--bk) var(--bt) no-repeat,
+    linear-gradient(var(--fr),var(--fr)) 100% 100%/var(--bt) var(--bk) no-repeat,
+    linear-gradient(180deg,rgba(85,230,165,.035),transparent 40%),
+    var(--slab);
+  border:1px solid var(--phos-dim);border-radius:0;
+  box-shadow:inset 0 0 22px rgba(85,230,165,.05),0 0 0 1px rgba(0,0,0,.6),0 12px 30px var(--deep-shadow)}
+
+/* the tray */
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;padding:8px;box-sizing:border-box;touch-action:none;user-select:none;-webkit-user-select:none;perspective:600px}
+.cell{position:relative;border-radius:12%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6%;padding:18%;box-sizing:border-box;min-width:0;min-height:0;
+  background:radial-gradient(circle,var(--phos-dim) 0 1.5px,transparent 2px);box-shadow:inset 0 0 0 1px rgba(85,230,165,.06);transition:opacity .2s}
+.cell i{border-radius:50%;visibility:hidden}
+.cell b{display:none}
+.cell svg{position:absolute;inset:14%;width:72%;height:72%;visibility:hidden}
+
+/* a die: dark glass with phosphor pips */
+.cell.on,.die{background:linear-gradient(155deg,rgba(85,230,165,.15),rgba(85,230,165,.03) 55%,rgba(0,0,0,.3)),var(--raise);
+  box-shadow:inset 0 0 0 1px var(--phos-dim),inset 1px 1px 0 rgba(200,255,230,.09),inset -2px -3px 6px rgba(0,0,0,.45),0 3px 6px var(--deep-shadow)}
+.cell.on i.s,.die i.s{visibility:visible}
+.cell.on i,.die i{background:var(--brass);box-shadow:0 0 4px var(--glow)}
+.grid.rolled .cell:not(.on){opacity:.3}
+.cell.hit{box-shadow:inset 0 0 0 1px var(--brass),inset -2px -3px 6px rgba(0,0,0,.45),0 0 10px var(--glow-soft),0 3px 6px var(--deep-shadow)}
+.cell.miss{opacity:.3}
+.cell.on.miss i{background:var(--muted);box-shadow:none}
+
+/* 6s: lit phosphor, pulsing, sparking */
+.grid.rolled .cell.on.six{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 55%,var(--phos-deep));
+  box-shadow:inset 0 0 0 1px var(--seal-hi),inset -2px -3px 6px rgba(0,40,20,.35),0 0 14px var(--glow),0 3px 6px var(--deep-shadow);opacity:1;z-index:2}
+.grid.rolled .cell.on.six i{background:var(--phos-ink);box-shadow:inset 0 1px 1px rgba(0,0,0,.5)}
+.grid.rolled .cell.on.six.miss{opacity:.6}
+.cell.six{animation:pop .45s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--d,0ms)}
+.cell.six.quiet{animation:none}
+@keyframes pop{0%{transform:scale(1);filter:brightness(2.4)}40%{transform:scale(1.28)}100%{transform:scale(1);filter:none}}
+.cell.six::after{content:"";position:absolute;inset:-3px;border-radius:16%;box-shadow:0 0 14px 3px var(--glow);opacity:0;pointer-events:none;
+  animation:glow .9s ease-out both,pulse 2s ease-in-out infinite;animation-delay:var(--d,0ms),calc(var(--d,0ms) + .9s)}
+@keyframes glow{0%{opacity:0}25%{opacity:1}100%{opacity:.35}}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.95}}
+.tw{position:absolute;inset:0;pointer-events:none;z-index:3}
+.tw s{position:absolute;width:30%;height:30%;background:var(--seal-hi);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:0;animation:twinkle 1.8s ease-in-out infinite}
+.tw s:nth-child(1){top:-12%;right:-10%}
+.tw s:nth-child(2){bottom:-10%;left:-12%;width:22%;height:22%}
+.tw s:nth-child(3){top:-8%;left:-6%;width:18%;height:18%}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.2) rotate(0)}45%{opacity:1;transform:scale(1) rotate(45deg)}70%{opacity:0;transform:scale(.4) rotate(90deg)}}
+.spark{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:3}
+.spark s{position:absolute;left:-3px;top:-3px;width:6px;height:6px;background:var(--seal-hi);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);opacity:0;animation:fly .7s ease-out both;animation-delay:var(--d,0ms)}
+@keyframes fly{0%{opacity:1;transform:rotate(var(--a)) translateY(0) scale(.4)}60%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--r) * -1)) scale(1.1)}}
+
+/* 1s: blood-red glass with a skull */
+.grid.rolled .cell.on.one{background:linear-gradient(155deg,var(--blood-hi),var(--blood));box-shadow:inset 0 0 0 1px var(--danger),0 0 10px var(--red-glow),0 3px 6px var(--deep-shadow);opacity:.9}
+.grid.rolled .cell.on.one i.s{visibility:hidden}
+.grid.rolled .cell.on.one svg{visibility:visible;color:var(--danger);filter:drop-shadow(0 0 3px var(--red-glow))}
+.grid.rolled .cell.on.one.hit{opacity:1}
+
+/* motion: materialise, tumble, land, glitch */
+.cell.drop{animation:mat .45s ease-out both;animation-delay:var(--dd,0ms)}
+@keyframes mat{0%{opacity:0;transform:scale(1.4);filter:blur(4px) brightness(2.5)}30%{opacity:.9;filter:blur(1px) brightness(1.8)}45%{opacity:.3}60%{opacity:1;transform:scale(.96);filter:none}75%{opacity:.6}100%{opacity:1;transform:none}}
+.cell.spin{animation:tumble .14s linear infinite}
+@keyframes tumble{0%,100%{transform:rotateX(35deg) rotateY(-30deg) rotateZ(-10deg) scale(.86);filter:brightness(1.5)}50%{transform:rotateX(-30deg) rotateY(35deg) rotateZ(12deg) scale(1.02);filter:brightness(.8)}}
+.grid.rolled .cell.on.land:not(.six):not(.one){animation:land .35s ease-out both}
+@keyframes land{0%{transform:scale(1.12);filter:brightness(2.2)}100%{transform:none;filter:none}}
+.grid.rolled .cell.on.one.land{animation:glitch .36s steps(1) both}
+@keyframes glitch{0%{transform:translate(-3px,1px);filter:brightness(2)}20%{transform:translate(3px,-1px)}40%{transform:translate(-2px,0);filter:brightness(1.4)}60%{transform:translate(2px,1px)}80%{transform:translate(-1px,0)}100%{transform:none;filter:none}}
+
+/* control bar */
+.bar{display:flex;flex-direction:column;gap:10px;padding-bottom:env(safe-area-inset-bottom,0px)}
+.acts{display:flex;gap:6px}
+.acts .btn{flex:1 1 0;min-width:0;height:40px;padding-inline:4px}
+.faces{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.face{border:0;background:transparent;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.die{width:100%;max-width:54px;aspect-ratio:1;border-radius:12%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6%;padding:18%;box-sizing:border-box;transition:transform .1s,box-shadow .15s}
+.die i{border-radius:50%;visibility:hidden}
+.face:hover .die{box-shadow:inset 0 0 0 1px var(--brass),0 0 10px var(--glow-soft),0 3px 6px var(--deep-shadow)}
+.face:active .die{transform:scale(.92)}
+.face span{font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.face.sel .die{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 60%,var(--phos-deep));box-shadow:inset 0 0 0 1px var(--seal-hi),0 0 14px var(--glow)}
+.face.sel .die i{background:var(--phos-ink);box-shadow:none}
+.face.sel span{color:var(--brass);text-shadow:0 0 8px var(--glow)}
+
+/* roll log */
+.scrim{position:fixed;inset:0;background:rgba(1,6,4,.8);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);z-index:20}
+.sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,520px);max-height:75%;z-index:21;display:flex;flex-direction:column;box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px);border-bottom:0;--bk:16px}
+.sheet:not([hidden]){animation:sheetIn .3s ease-out both}
+@keyframes sheetIn{0%{opacity:0;transform:translate(-50%,24px)}40%{opacity:.6}55%{opacity:.25}100%{opacity:1;transform:translate(-50%,0)}}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:14px 16px 10px;border-bottom:1px dashed var(--phos-dim)}
+.sheet-head .k-lbl{flex:1;font-size:11px;color:var(--brass)}
+.sheet-head .btn{height:30px;padding-inline:10px}
+.h-list{list-style:none;margin:0;padding:0;overflow-y:auto;min-height:0}
+.h-item{width:100%;display:grid;grid-template-columns:14px 40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 16px;background:none;border:0;border-bottom:1px dashed var(--phos-dim);text-align:left;color:var(--ink);position:relative}
+.h-list li:last-child .h-item{border-bottom:0}
+.h-item::before{content:"";position:absolute;left:22px;top:0;bottom:0;width:1px;background:var(--phos-dim)}
+.h-list li:first-child .h-item::before{top:50%}
+.h-list li:last-child .h-item::before{bottom:50%}
+.h-list li:only-child .h-item::before{display:none}
+.h-item:hover{background:rgba(85,230,165,.05)}
+.h-item.cur{background:var(--brass-soft)}
+.h-dot{width:8px;height:8px;transform:rotate(45deg);border:2px solid var(--phos-dim);background:var(--slab);position:relative;z-index:1;justify-self:center}
+.h-item.cur .h-dot{background:var(--brass);border-color:var(--brass);box-shadow:0 0 8px var(--glow)}
+.h-hits{font-weight:700;font-size:22px;line-height:1;color:var(--brass);text-shadow:0 0 8px var(--glow);text-align:center;font-variant-numeric:tabular-nums}
+.h-mid{min-width:0;display:flex;flex-direction:column;gap:6px}
+.h-title{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.strip{display:flex;flex-wrap:wrap;gap:2px}
+.strip i{width:7px;height:7px;background:var(--phos-dim);opacity:.6}
+.strip i.h{background:var(--brass);opacity:1}
+.strip i.s6{background:var(--seal-hi);opacity:1;box-shadow:0 0 4px var(--glow)}
+.strip i.s1{background:var(--danger);opacity:1}
+.h-time{font-size:10.5px;letter-spacing:.06em;color:var(--muted);font-variant-numeric:tabular-nums;align-self:start}
+.h-item.cur .h-time{color:var(--brass)}
+.h-empty{color:var(--muted);font-size:12px;letter-spacing:.04em;text-align:center;padding:28px 16px}
+.h-empty::before{content:"> ";color:var(--brass)}
+
+@media (max-height:620px){.big{font-size:30px}.readout{min-height:48px}.die{max-width:42px}}
+@media (prefers-reduced-motion: reduce){
+  body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
+  .spark,.tw{display:none}.cell.six::after{animation:none;opacity:.8}
+}
+</style>
+</head>
+<body>
+
+<main class="app">
+  <header class="mast">
+    <div class="eyebrow">D6 Auspex<span class="cursor" aria-hidden="true"></span></div>
+    <button class="btn hist" id="histBtn" aria-label="Roll log">Log <span class="n" id="histN">0</span></button>
+  </header>
+
+  <div class="readout">
+    <div class="left">
+      <button class="btn step" id="minus" aria-label="One fewer die">−</button>
+      <div class="pool">
+        <div class="k-lbl">Pool</div>
+        <div class="big" id="count">10<small>D6</small></div>
+      </div>
+      <button class="btn step" id="plus" aria-label="One more die">+</button>
+    </div>
+    <div class="right idle" id="res" aria-live="polite">
+      <div class="k-lbl">Result</div>
+      <div class="big" id="hits">Awaiting roll</div>
+      <div class="sub" id="sub"></div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="grid frame" id="grid" aria-label="Drag from the top left to choose how many dice"></div>
+  </div>
+
+  <div class="bar">
+    <div class="acts">
+      <button class="btn primary" id="again" disabled>Roll again</button>
+      <button class="btn" id="rerollOnes" disabled>Re-roll 1s</button>
+      <button class="btn" id="rerollFails" disabled>Re-roll fails</button>
+      <button class="btn" id="removeFails" disabled>Remove fails</button>
+    </div>
+    <div class="faces" id="faces"></div>
+  </div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet frame" id="sheet" hidden aria-label="Roll log">
+  <div class="sheet-head">
+    <span class="k-lbl">Roll log · this session</span>
+    <button class="btn" id="histClear">Clear</button>
+    <button class="btn" id="histClose">Close</button>
+  </div>
+  <ol class="h-list" id="histList"></ol>
+</section>
+
+<script>
+(function(){
+  const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+  const $=id=>document.getElementById(id);
+  const grid=$('grid'), stage=$('stage'), facesEl=$('faces');
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let count=10, target=null, rolls=[], busy=false, timer=null, fresh=null, action='Rolled', slots=[];
+
+  const setPips=(el,v)=>{const on=PIPS[v]; el.querySelectorAll('i').forEach((p,i)=>p.classList.toggle('s',on.includes(i)));};
+  // Rejection sampling: discard the top 4 values of the 32-bit range so all six faces are exactly equally likely
+  const LIMIT=4294967292; // largest multiple of 6 that fits in 2^32
+  const buf=new Uint32Array(1);
+  const d6=()=>{do{crypto.getRandomValues(buf);}while(buf[0]>=LIMIT); return 1+(buf[0]%6);};
+  const isHit=v=>v>=target;
+
+  // square tray sized to the space available
+  function fit(){const s=Math.floor(Math.min(stage.clientWidth,stage.clientHeight)); grid.style.width=grid.style.height=s+'px';}
+  new ResizeObserver(fit).observe(stage);
+
+  const SKULL='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M12 2a8 8 0 0 0-8 8c0 2.6 1.2 4.6 3 5.8V19a1 1 0 0 0 1 1h1v-2h1.5v2h3v-2H15v2h1a1 1 0 0 0 1-1v-3.2c1.8-1.2 3-3.2 3-5.8a8 8 0 0 0-8-8zM6.6 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0zM13 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0zM12 13.6l-1.3 2.3h2.6z"/></svg>';
+  function clearFx(c){c.classList.remove('one','six','quiet'); c.style.removeProperty('--d'); c.querySelectorAll('.spark,.tw').forEach(x=>x.remove());}
+  function sparkle(c,delay,burst=true){
+    c.style.setProperty('--d',delay+'ms');
+    c.classList.remove('six'); void c.offsetWidth; c.classList.add('six');
+    if(!burst) c.classList.add('quiet');
+    if(reduce) return;
+    const tw=document.createElement('span'); tw.className='tw'; tw.innerHTML='<s></s><s></s><s></s>';
+    tw.querySelectorAll('s').forEach(x=>x.style.animationDelay=(delay/1000+.9+Math.random()*1.4).toFixed(2)+'s');
+    c.appendChild(tw);
+    if(!burst) return;
+    const s=document.createElement('span'); s.className='spark';
+    const r=Math.round(c.offsetWidth*.85);
+    for(let k=0;k<8;k++){const p=document.createElement('s'); p.style.setProperty('--a',(k*45+Math.random()*20-10)+'deg'); p.style.setProperty('--r',(r*(.7+Math.random()*.5))+'px'); s.appendChild(p);}
+    c.appendChild(s); setTimeout(()=>s.remove(),800+delay);
+  }
+  const cells=[];
+  for(let i=0;i<64;i++){
+    const c=document.createElement('div'); c.className='cell';
+    c.innerHTML='<i></i>'.repeat(9)+SKULL;
+    grid.appendChild(c); cells.push(c);
+  }
+  function tick(){const h=$('hits'); h.classList.remove('tick'); void h.offsetWidth; if(!reduce) h.classList.add('tick');}
+
+  function clearRoll(){
+    if(timer){clearInterval(timer);timer=null;busy=false;}
+    rolls=[]; grid.classList.remove('rolled');
+    cells.forEach(c=>{c.classList.remove('hit','miss','spin','land'); clearFx(c);});
+    $('res').classList.add('idle');
+    $('hits').innerHTML=target?'Tap a target<br>to roll':'Pick a target<br>to roll';
+    $('sub').textContent='';
+    $('again').disabled=!target||!count; $('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
+  }
+  // dice fill the tray in reading order; slots maps each die to its cell
+  const lineSlots=n=>Array.from({length:n},(_,k)=>k);
+  function setCount(n){
+    n=Math.max(1,Math.min(64,n));
+    if(n===count&&slots.length===n&&!rolls.length) return;
+    count=n; slots=lineSlots(n);
+    showCount(); clearRoll();
+  }
+
+  grid.addEventListener('animationend',e=>{if(e.animationName==='mat') e.target.classList.remove('drop');});
+  let dragging=false;
+  function pick(e){
+    const r=grid.getBoundingClientRect(), pad=9, w=r.width-pad*2, h=r.height-pad*2;
+    const col=Math.max(0,Math.min(7,Math.floor((e.clientX-r.left-pad)/w*8)));
+    const row=Math.max(0,Math.min(7,Math.floor((e.clientY-r.top-pad)/h*8)));
+    setCount(row*8+col+1);
+  }
+  $('minus').onclick=()=>setCount(count-1);
+  $('plus').onclick=()=>setCount(count+1);
+  grid.addEventListener('pointerdown',e=>{dragging=true; try{grid.setPointerCapture(e.pointerId)}catch(_){} pick(e); e.preventDefault();});
+  grid.addEventListener('pointermove',e=>{if(dragging) pick(e);});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>grid.addEventListener(t,()=>dragging=false));
+
+  // target faces
+  for(let v=1;v<=6;v++){
+    const b=document.createElement('button'); b.className='face'; b.setAttribute('aria-label','Roll, succeed on '+v+' or higher');
+    b.innerHTML='<div class="die">'+'<i></i>'.repeat(9)+'</div><span>'+v+'+</span>';
+    setPips(b.querySelector('.die'),v);
+    b.onclick=()=>{target=v; markFaces(); roll();};
+    facesEl.appendChild(b);
+  }
+  function markFaces(){[...facesEl.children].forEach((b,i)=>b.classList.toggle('sel',i+1===target));}
+
+  // rolling happens in the tray cells themselves
+  function animate(idx,done){
+    if(reduce){done();return;}
+    idx.forEach(i=>cells[slots[i]].classList.add('spin'));
+    let t=0; timer=setInterval(()=>{
+      idx.forEach(i=>setPips(cells[slots[i]],1+Math.floor(Math.random()*6)));
+      if((t+=60)>=620){clearInterval(timer); timer=null; idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
+    },60);
+  }
+  function lock(){$('again').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
+  function roll(){
+    if(busy||!count||!target) return; busy=true; action='Rolled';
+    cells.forEach(c=>c.classList.remove('drop'));
+    rolls=Array.from({length:count},d6);
+    grid.classList.add('rolled');
+    cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
+    rolls.forEach((v,i)=>setPips(cells[slots[i]],v));
+    $('res').classList.remove('idle'); $('hits').textContent='--'; $('sub').textContent='Rolling';
+    lock(); animate(rolls.map((_,i)=>i),finish);
+  }
+  function rerollWhere(test,label){
+    if(busy||!rolls.length) return;
+    const idx=rolls.map((v,i)=>test(v)?i:-1).filter(i=>i>=0);
+    if(!idx.length) return; busy=true; action=label;
+    idx.forEach(i=>{rolls[i]=d6(); const c=cells[slots[i]]; c.classList.remove('miss','hit','land'); clearFx(c);});
+    fresh=new Set(idx);
+    lock(); animate(idx,finish);
+  }
+  // paint the current rolls; animIdx = dice that just landed (they flash, new 6s burst, new 1s glitch)
+  function paintResult(animIdx){
+    let hits=0, sixNo=0;
+    rolls.forEach((v,i)=>{
+      const c=cells[slots[i]]; setPips(c,v); const h=isHit(v); if(h) hits++;
+      c.classList.toggle('hit',h); c.classList.toggle('miss',!h); c.classList.toggle('one',v===1);
+      const isNew=!!animIdx&&animIdx.has(i);
+      if(isNew){c.classList.remove('land'); void c.offsetWidth; c.classList.add('land');}
+      if(v===6){ if(isNew) sparkle(c,Math.min(sixNo++*40,400)); else if(!c.classList.contains('six')) sparkle(c,0,false); }
+    });
+    return hits;
+  }
+  function syncButtons(hits){
+    const n=rolls.length;
+    $('again').disabled=!n||!target; $('rerollFails').disabled=!n||hits===n;
+    $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n;
+  }
+  // newly added dice materialise in their slot showing a random resting face
+  function showCount(){
+    const on=new Set(slots); let k=0;
+    cells.forEach((c,i)=>{
+      const was=c.classList.contains('on'), now=on.has(i);
+      if(now&&!was){
+        setPips(c,1+Math.floor(Math.random()*6));
+        if(!reduce){c.style.setProperty('--dd',Math.min(k++*22,300)+'ms'); c.classList.remove('drop'); void c.offsetWidth; c.classList.add('drop');}
+      }
+      if(!now) c.classList.remove('drop');
+      c.classList.toggle('on',now);
+    });
+    $('count').innerHTML=count+'<small>D6</small>';
+  }
+  function finish(){
+    const idx=fresh||new Set(rolls.map((_,i)=>i)); fresh=null;
+    const hits=paintResult(idx), n=rolls.length;
+    $('hits').textContent=hits; tick();
+    $('sub').textContent=(hits===1?'hit':'hits')+' on '+target+'+ · avg '+(n*(7-target)/6).toFixed(1);
+    syncButtons(hits); busy=false;
+    record(action);
+  }
+  $('again').onclick=roll;
+  $('rerollFails').onclick=()=>rerollWhere(v=>!isHit(v),'Re-rolled fails');
+  $('rerollOnes').onclick=()=>rerollWhere(v=>v===1,'Re-rolled 1s');
+
+  // keep only the successes as the new pool (e.g. hits become the wound roll)
+  function removeFails(){
+    if(busy||!rolls.length) return;
+    const kept=rolls.filter(isHit);
+    if(kept.length===rolls.length) return;
+    rolls=kept; count=kept.length; slots=lineSlots(count);
+    cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
+    showCount(); paintResult(null); syncButtons(count);
+    if(count){
+      $('hits').textContent=count; tick();
+      $('sub').textContent=(count===1?'die':'dice')+' left in pool';
+      record('Removed fails');
+    }else{
+      grid.classList.remove('rolled'); $('again').disabled=true;
+      $('res').classList.add('idle'); $('hits').innerHTML='No dice left'; $('sub').textContent='Drag to pick a new pool';
+    }
+  }
+  $('removeFails').onclick=removeFails;
+
+  // ---- session log ----
+  let history=[], curId=null;
+  try{history=JSON.parse(sessionStorage.getItem('d6-tray-history')||'[]')||[];}catch(_){history=[];}
+  function save(){try{sessionStorage.setItem('d6-tray-history',JSON.stringify(history));}catch(_){}}
+  function record(label){
+    const id=(history.length?history[history.length-1].id:0)+1;
+    history.push({id,t:Date.now(),label,target,rolls:rolls.slice(),hitsText:$('hits').textContent,sub:$('sub').textContent});
+    if(history.length>200) history.shift();
+    curId=id; save(); renderHistory();
+  }
+  function restore(id){
+    const e=history.find(x=>x.id===id); if(!e||busy) return;
+    target=e.target; markFaces();
+    rolls=e.rolls.slice(); count=rolls.length; slots=lineSlots(count);
+    cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
+    showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
+    const hits=paintResult(null);
+    $('hits').textContent=e.hitsText; tick(); $('sub').textContent=e.sub;
+    syncButtons(hits); curId=id; renderHistory(); closeSheet();
+  }
+  const fmtTime=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  function renderHistory(){
+    $('histN').textContent=history.length;
+    const list=$('histList');
+    if(!history.length){list.innerHTML='<li class="h-empty">No rolls logged. Every roll this session lands here; tap one to restore it.</li>'; return;}
+    list.innerHTML=history.slice().reverse().map(e=>{
+      const strip=e.rolls.map(v=>'<i class="'+(v===6?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
+      return '<li><button class="h-item'+(e.id===curId?' cur':'')+'" data-id="'+e.id+'">'+
+        '<span class="h-dot"></span>'+
+        '<span class="h-hits">'+e.hitsText+'</span>'+
+        '<span class="h-mid"><span class="h-title">'+e.label+' · '+e.rolls.length+'D6 · '+e.target+'+</span><span class="strip">'+strip+'</span></span>'+
+        '<span class="h-time">'+(e.id===curId?'NOW':fmtTime(e.t))+'</span></button></li>';
+    }).join('');
+  }
+  $('histList').addEventListener('click',ev=>{const b=ev.target.closest('.h-item'); if(b) restore(Number(b.dataset.id));});
+  function openSheet(){$('scrim').hidden=false; $('sheet').hidden=false; const c=$('histList').querySelector('.cur'); if(c) c.scrollIntoView({block:'nearest'}); $('histClose').focus();}
+  function closeSheet(){$('scrim').hidden=true; $('sheet').hidden=true;}
+  $('histBtn').onclick=openSheet; $('histClose').onclick=closeSheet; $('scrim').onclick=closeSheet;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSheet();});
+  let clearArm=null;
+  $('histClear').onclick=()=>{
+    const b=$('histClear');
+    if(!clearArm){b.textContent='Confirm'; clearArm=setTimeout(()=>{clearArm=null; b.textContent='Clear';},3000); return;}
+    clearTimeout(clearArm); clearArm=null; b.textContent='Clear';
+    history=[]; curId=null; save(); renderHistory();
+  };
+
+  count=0; setCount(10); markFaces(); renderHistory(); fit();
+})();
+</script>
+</body>
+</html>
