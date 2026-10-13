@@ -236,6 +236,60 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
 @media (max-width:380px){.readout{--big:32px}.stats{gap:12px}}
+/* ---------- guide: a short animated slide show, as in Dominatus Codex ---------- */
+.mast-btns{display:flex;gap:6px}
+.guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(calc(100% - 32px),420px);max-height:calc(100% - 48px);overflow:auto;z-index:21;box-sizing:border-box;--bk:16px;padding-bottom:16px}
+.guide:not([hidden]){animation:guideIn .3s ease-out both}
+@keyframes guideIn{0%{opacity:0;transform:translate(-50%,-46%)}40%{opacity:.6}55%{opacity:.25}100%{opacity:1;transform:translate(-50%,-50%)}}
+.g-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px 8px}
+.g-head h2{margin:4px 0 0;font:700 17px/1.25 var(--term);letter-spacing:.02em;color:var(--ink);text-wrap:balance}
+.g-x{margin-left:auto;flex:none;width:32px;height:32px;padding:0;font-size:14px}
+.g-slide{margin:4px 18px 0;height:160px;border:1px dashed var(--phos-dim);background:rgba(85,230,165,.03);position:relative;overflow:hidden;display:grid;place-items:center;animation:gIn .45s cubic-bezier(.2,.9,.25,1) both}
+.g-body{margin:12px 18px 4px;font-size:13.5px;line-height:1.55;color:var(--ink);min-height:9.3em;animation:gText .4s .12s both}
+.g-body b{color:var(--brass);font-weight:600}
+.g-dots{display:flex;justify-content:center;gap:6px;padding:8px 0 0}
+.g-dots button{width:18px;height:4px;padding:0;border:0;background:var(--phos-dim)}
+.g-dots button[aria-selected="true"]{background:var(--brass);box-shadow:0 0 8px var(--glow);width:28px}
+.g-nav{display:flex;justify-content:space-between;gap:8px;padding:14px 18px 0}
+.g-nav .btn{height:36px;padding-inline:16px}
+.g-nav .btn::before{content:"[ ";opacity:.6}.g-nav .btn::after{content:" ]";opacity:.6}
+@keyframes gIn{0%{opacity:0;transform:scaleY(.04);filter:brightness(2.4)}60%{opacity:1;transform:scaleY(1.02)}100%{transform:none;filter:none}}
+@keyframes gText{0%{opacity:0}30%{opacity:.7}45%{opacity:.2}100%{opacity:1}}
+.ga{width:100%;height:100%;position:relative;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* 1 welcome: typed title over a row of flickering dice */
+.ga-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.gw-title{font-size:26px;font-weight:700;letter-spacing:.18em;color:var(--brass);text-shadow:0 0 12px var(--glow);overflow:hidden;white-space:nowrap;width:0;animation:gType 1.6s steps(10) .2s forwards}
+.gw-title i{display:inline-block;width:.5em;height:.8em;background:var(--brass);margin-left:4px;animation:blink 1s steps(1) infinite}
+@keyframes gType{to{width:12.6ch}}
+.gw-dice{display:flex;gap:8px}
+.gw-dice span{width:22px;height:22px;border:1px solid var(--phos-dim);background:var(--raise);animation:gFlick 2.4s infinite}
+.gw-dice span:nth-child(2){animation-delay:.4s}.gw-dice span:nth-child(3){animation-delay:.8s}.gw-dice span:nth-child(4){animation-delay:1.2s}.gw-dice span:nth-child(5){animation-delay:1.6s}.gw-dice span:nth-child(6){animation-delay:2s}
+@keyframes gFlick{0%,20%{background:var(--brass);box-shadow:0 0 10px var(--glow)}30%,100%{background:var(--raise);box-shadow:none}}
+/* 2 + 3 face-frequency charts, same axis on both */
+.ga-bars{display:flex;flex-direction:column;justify-content:flex-end;padding:12px 18px 10px;box-sizing:border-box}
+.gb-plot{position:relative;flex:1;display:flex;align-items:flex-end;gap:10px;border-bottom:1px solid var(--phos-dim);padding:0 6px}
+.gb-plot::after{content:"";position:absolute;left:0;right:0;bottom:calc(var(--fair) * 1%);border-top:1px dashed var(--muted);opacity:.7}
+.gb-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
+.gb-col b{font-weight:600;font-size:9px;color:var(--ink);letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
+.gb-col i{display:block;width:100%;height:calc(var(--h) * 1%);background:var(--muted);transform-origin:bottom;animation:gGrow .7s cubic-bezier(.2,.9,.25,1) both}
+.ga-app .gb-col i{background:var(--brass);box-shadow:0 0 8px var(--glow-soft)}
+.gb-col:nth-child(2) i{animation-delay:.06s}.gb-col:nth-child(3) i{animation-delay:.12s}.gb-col:nth-child(4) i{animation-delay:.18s}.gb-col:nth-child(5) i{animation-delay:.24s}.gb-col:nth-child(6) i{animation-delay:.3s}
+@keyframes gGrow{from{transform:scaleY(0)}}
+.gb-x{display:flex;gap:10px;padding:4px 6px 0}.gb-x span{flex:1;text-align:center;color:var(--ink)}
+.gb-cap{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:9px;letter-spacing:.06em;white-space:nowrap}
+.gb-cap em{font-style:normal;color:var(--muted)}
+/* 4 two sources side by side */
+.ga-vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:0 16px}
+.gv{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;line-height:1.4}
+.gv b{color:var(--ink);font-weight:700;letter-spacing:.14em}
+.gv-die,.gv-chip{width:44px;height:44px;box-sizing:border-box}
+.gv-die{border:1px solid var(--muted);background:var(--raise);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:7px;gap:3px;animation:gWobble 2.2s ease-in-out infinite}
+.gv-die i{border-radius:50%;background:var(--muted);visibility:hidden}.gv-die i.s{visibility:visible}
+@keyframes gWobble{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(7deg) translateY(-2px)}}
+.gv-chip{border:1px solid var(--brass);background:repeating-linear-gradient(90deg,var(--brass-soft) 0 5px,transparent 5px 8px),var(--raise);box-shadow:0 0 12px var(--glow-soft);animation:gPulse 1.6s ease-in-out infinite}
+@keyframes gPulse{50%{box-shadow:0 0 18px var(--glow)}}
+.gv-eq{font-size:16px;color:var(--brass)}
+@media (prefers-reduced-motion:reduce){.guide:not([hidden]),.g-slide,.g-body,.ga,.ga *{animation:none!important}.gw-title{width:auto}}
 @media (max-height:620px){.big{font-size:30px}.readout{--big:30px}.die{max-width:42px}}
 @media (prefers-reduced-motion: reduce){
   body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
@@ -248,7 +302,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 <main class="app">
   <header class="mast">
     <div class="eyebrow">D6 Auspex<span class="cursor" aria-hidden="true"></span></div>
-    <button class="btn hist" id="histBtn" aria-label="Roll log">Log <span class="n" id="histN">0</span></button>
+    <div class="mast-btns">
+      <button class="btn hist" id="guideBtn" aria-haspopup="dialog">? Guide</button>
+      <button class="btn hist" id="histBtn" aria-label="Roll log">Log <span class="n" id="histN">0</span></button>
+    </div>
   </header>
 
   <div class="readout">
@@ -289,6 +346,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <div class="crt-glass" aria-hidden="true"><i class="crt-bulge"></i><i class="crt-glare"></i></div>
 <div class="scrim" id="scrim" hidden></div>
+<section class="guide frame" id="guide" hidden role="dialog" aria-modal="true" aria-labelledby="g-title" aria-describedby="g-body"></section>
 <section class="sheet frame" id="sheet" hidden aria-label="Roll log">
   <div class="sheet-head">
     <span class="k-lbl">Roll log · this session</span>
@@ -531,7 +589,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
   $('histList').addEventListener('click',ev=>{const b=ev.target.closest('.h-item'); if(b) restore(Number(b.dataset.id));});
   function openSheet(){$('scrim').hidden=false; $('sheet').hidden=false; const c=$('histList').querySelector('.cur'); if(c) c.scrollIntoView({block:'nearest'}); $('histClose').focus();}
-  function closeSheet(){$('scrim').hidden=true; $('sheet').hidden=true;}
+  function closeSheet(){$('scrim').hidden=true; $('sheet').hidden=true; $('guide').hidden=true;}
   $('histBtn').onclick=openSheet; $('histClose').onclick=closeSheet; $('scrim').onclick=closeSheet;
   document.addEventListener('keydown',e=>{if(e.key==='Escape') closeSheet();});
   let clearArm=null;
@@ -563,7 +621,55 @@ button{font:inherit;color:inherit;cursor:pointer}
     if(e){e.crit=crit; e.critsText=String(crits); e.failsText=$('fails').textContent; e.hitsText=$('hits').textContent; e.sub=$('sub').textContent; save(); renderHistory();}
   }
 
+  // ---- guide: how fair is the roll? (opens once on first visit, then from ? Guide) ----
+  const GKEY='dicehammer-guide-seen-v1';
+  const bars=(vals,cls,cap)=>{ // axis runs 16.4% to 17.0% on both charts so they compare directly
+    const h=v=>((v-16.4)/0.6*100).toFixed(1);
+    return '<div class="ga ga-bars '+cls+'" style="--fair:'+h(100/6)+'"><div class="gb-plot">'+vals.map(v=>'<div class="gb-col"><b>'+v.toFixed(2)+'</b><i style="--h:'+h(v)+'"></i></div>').join('')+
+      '</div><div class="gb-x">'+[1,2,3,4,5,6].map(n=>'<span>'+n+'</span>').join('')+'</div><div class="gb-cap"><span>'+cap+'</span><em>--- fair</em></div></div>';
+  };
+  const dieArt='<div class="gv-die">'+[0,1,2,3,4,5,6,7,8].map(i=>'<i class="'+([0,2,3,5,6,8].includes(i)?'s':'')+'"></i>').join('')+'</div>';
+  const GUIDE=[
+    {t:'Welcome to DiceHammer',b:'A dice tray for big Warhammer rolls. Before you start, here is how fair each roll is, in four quick screens.',
+     art:'<div class="ga ga-welcome"><div class="gw-title">DICEHAMMER<i></i></div><div class="gw-dice"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>'},
+    {t:'Real dice lean a little',b:'Machine-rolled tests of real dice found some faces turning up more than others. Tiny flaws in the cube and the way you throw tilt them slightly.',
+     art:bars([16.86,16.51,16.62,16.58,16.55,16.88],'ga-die','Real dice · Labby 2009')},
+    {t:'The app has no lean',b:'Every roll uses your device’s <b>secure random generator</b>, the kind used for encryption. Each face is <b>exactly 1 in 6</b>, every die is rolled fresh, and no throw can tilt it.',
+     art:bars([16.67,16.68,16.69,16.65,16.65,16.66],'ga-app','DiceHammer · 6M test rolls')},
+    {t:'Fair, just steadier',b:'Neither is “truly” random. A die is physics too quick to predict; the app is maths too secure to predict. Both are fair at the table, and the app never wobbles. Reopen this any time from <b>? Guide</b>.',
+     art:'<div class="ga ga-vs"><div class="gv">'+dieArt+'<b>Die</b><span>physics</span></div><div class="gv-eq">≈</div><div class="gv"><div class="gv-chip"></div><b>App</b><span>secure maths</span></div></div>'}
+  ];
+  let gi=0, gReturn=null;
+  function openGuide(i){
+    if($('guide').hidden) gReturn=document.activeElement;
+    gi=Math.max(0,Math.min(GUIDE.length-1,i)); const s=GUIDE[gi], last=gi===GUIDE.length-1;
+    $('guide').innerHTML='<div class="g-head"><div><div class="k-lbl">Guide · '+(gi+1)+' of '+GUIDE.length+'</div><h2 id="g-title">'+s.t+'</h2></div><button class="btn g-x" aria-label="Close guide">✕</button></div>'+
+      '<div class="g-slide" aria-hidden="true">'+s.art+'</div><p class="g-body" id="g-body">'+s.b+'</p>'+
+      '<div class="g-dots" role="tablist" aria-label="Guide steps">'+GUIDE.map((x,k)=>'<button role="tab" aria-selected="'+(k===gi)+'" aria-label="Step '+(k+1)+': '+x.t+'" data-g="'+k+'"></button>').join('')+'</div>'+
+      '<div class="g-nav">'+(gi?'<button class="btn" data-g="'+(gi-1)+'">Back</button>':'<button class="btn" id="gSkip">Skip</button>')+
+      '<button class="btn primary" '+(last?'id="gDone"':'data-g="'+(gi+1)+'"')+'>'+(last?'Start rolling':'Next')+'</button></div>';
+    $('scrim').hidden=false; $('guide').hidden=false;
+    try{localStorage.setItem(GKEY,'1');}catch(_){}
+    const g=$('guide');
+    g.querySelector('.g-x').onclick=closeGuide;
+    const sk=g.querySelector('#gSkip'); if(sk) sk.onclick=closeGuide;
+    const dn=g.querySelector('#gDone'); if(dn) dn.onclick=closeGuide;
+    g.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const fromDots=!!b.closest('.g-dots'); openGuide(+b.dataset.g); (fromDots?g.querySelector('.g-dots [aria-selected="true"]'):g.querySelector('.g-nav .primary')).focus();});
+    g.querySelector('.g-nav .primary').focus({preventScroll:true});
+  }
+  function closeGuide(){ $('guide').hidden=true; $('scrim').hidden=true; if(gReturn&&gReturn.focus) gReturn.focus(); }
+  $('guide').addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'&&gi<GUIDE.length-1) openGuide(gi+1);
+    else if(e.key==='ArrowLeft'&&gi>0) openGuide(gi-1);
+  });
+  let gsx=null;
+  $('guide').addEventListener('pointerdown',e=>{gsx=e.clientX;});
+  $('guide').addEventListener('pointerup',e=>{ if(gsx===null) return; const dx=e.clientX-gsx; gsx=null;
+    if(Math.abs(dx)>50){ if(dx<0&&gi<GUIDE.length-1) openGuide(gi+1); else if(dx>0&&gi>0) openGuide(gi-1); } });
+  $('guideBtn').onclick=()=>openGuide(0);
+
   count=0; setCount(10); markFaces(); markCrit(); renderHistory(); fit();
+  if(!(()=>{try{return localStorage.getItem(GKEY);}catch(_){return '1';}})()) setTimeout(()=>openGuide(0),500);
 })();
 </script>
 </body>
