@@ -237,7 +237,18 @@ button{font:inherit;color:inherit;cursor:pointer}
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
 @media (max-width:380px){.readout{--big:32px}.stats{gap:12px}}
 /* ---------- guide: a short animated slide show, as in Dominatus Codex ---------- */
-.mast-btns{display:flex;gap:6px}
+/* header menu: Roll log and Guide */
+.menu-wrap{position:relative}
+.burger{display:inline-flex;flex-direction:column;gap:3px;margin-right:2px}.burger i{display:block;width:12px;height:2px;background:currentColor}
+#menuBtn[aria-expanded="true"]{background:var(--brass-soft);border-color:var(--brass);box-shadow:0 0 12px var(--glow-soft)}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:180px;display:flex;flex-direction:column;padding:4px 6px;box-sizing:border-box;--bk:8px}
+.menu:not([hidden]){animation:menuIn .22s ease-out both}
+@keyframes menuIn{0%{opacity:0;transform:translateY(-6px)}45%{opacity:.7}60%{opacity:.3}100%{opacity:1;transform:none}}
+.m-item{display:flex;justify-content:space-between;align-items:center;gap:14px;background:transparent;border:0;border-bottom:1px dashed var(--phos-dim);padding:12px 8px;color:var(--ink);font:600 11.5px/1 var(--term);letter-spacing:.1em;text-transform:uppercase;text-align:left}
+.m-item:last-child{border-bottom:0}
+.m-item:hover,.m-item:focus-visible{background:var(--brass-soft);color:var(--brass)}
+.m-item .n{color:var(--brass);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.menu:not([hidden]){animation:none}}
 .guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(calc(100% - 32px),420px);max-height:calc(100% - 48px);overflow:auto;z-index:21;box-sizing:border-box;--bk:16px;padding-bottom:16px}
 .guide:not([hidden]){animation:guideIn .3s ease-out both}
 @keyframes guideIn{0%{opacity:0;transform:translate(-50%,-46%)}40%{opacity:.6}55%{opacity:.25}100%{opacity:1;transform:translate(-50%,-50%)}}
@@ -312,9 +323,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 <main class="app">
   <header class="mast">
     <div class="eyebrow">D6 Auspex<span class="cursor" aria-hidden="true"></span></div>
-    <div class="mast-btns">
-      <button class="btn hist" id="guideBtn" aria-haspopup="dialog">? Guide</button>
-      <button class="btn hist" id="histBtn" aria-label="Roll log">Log <span class="n" id="histN">0</span></button>
+    <div class="menu-wrap">
+      <button class="btn hist" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><span class="burger" aria-hidden="true"><i></i><i></i><i></i></span>Menu</button>
+      <div class="menu frame" id="menu" hidden>
+        <button class="m-item" id="histBtn">Roll log <span class="n" id="histN">0</span></button>
+        <button class="m-item" id="guideBtn" aria-haspopup="dialog">Guide <span class="n">?</span></button>
+      </div>
     </div>
   </header>
 
@@ -684,6 +698,12 @@ button{font:inherit;color:inherit;cursor:pointer}
   $('guide').addEventListener('pointerup',e=>{ if(gsx===null) return; const dx=e.clientX-gsx; gsx=null;
     if(Math.abs(dx)>50){ if(dx<0&&gi<GUIDE.length-1) openGuide(gi+1); else if(dx>0&&gi>0) openGuide(gi-1); } });
   $('guideBtn').onclick=()=>openGuide(0);
+  // menu: one button in the header that holds Roll log and Guide
+  function setMenu(open){ $('menu').hidden=!open; $('menuBtn').setAttribute('aria-expanded',String(open)); if(open) $('menu').querySelector('.m-item').focus({preventScroll:true}); }
+  $('menuBtn').onclick=e=>{ e.stopPropagation(); setMenu($('menu').hidden); };
+  $('menu').addEventListener('click',()=>setMenu(false));
+  document.addEventListener('click',e=>{ if(!$('menu').hidden && !e.target.closest('.menu-wrap')) setMenu(false); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('menu').hidden){ setMenu(false); $('menuBtn').focus(); } });
 
   count=0; setCount(10); markFaces(); markCrit(); renderHistory(); fit();
   if(!skipNext()) openGuide(0);
