@@ -317,7 +317,8 @@ button{font:inherit;color:inherit;cursor:pointer}
   const d6=()=>{do{crypto.getRandomValues(buf);}while(buf[0]>=LIMIT); return 1+(buf[0]%6);};
   // crits are hits at or above the crit threshold, and always count as successes
   const isCrit=v=>v>=crit;
-  const isHit=v=>v>=target||isCrit(v);
+  // an unmodified 1 always fails, whatever the target
+  const isHit=v=>v!==1&&(v>=target||isCrit(v));
 
   // square tray sized to the space available
   function fit(){const s=Math.floor(Math.min(stage.clientWidth,stage.clientHeight)); grid.style.width=grid.style.height=s+'px';}
@@ -520,7 +521,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     list.innerHTML=history.slice().reverse().map(e=>{
       const ec=e.crit||6, strip=e.rolls.map(v=>'<i class="'+(v>=ec?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
       const nc=e.critsText!=null?e.critsText:e.rolls.filter(v=>v>=ec).length;
-      const nf=e.failsText!=null?e.failsText:e.rolls.filter(v=>v<e.target&&v<ec).length;
+      const nf=e.failsText!=null?e.failsText:e.rolls.filter(v=>v===1||(v<e.target&&v<ec)).length;
       return '<li><button class="h-item'+(e.id===curId?' cur':'')+'" data-id="'+e.id+'">'+
         '<span class="h-dot"></span>'+
         '<span class="h-hits">'+e.hitsText+'</span>'+
