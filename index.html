@@ -169,16 +169,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* motion: materialise, glitch-roll, land */
 .cell.drop{animation:mat .45s ease-out both;animation-delay:var(--dd,0ms)}
 @keyframes mat{0%{opacity:0;transform:scale(1.4);filter:blur(4px) brightness(2.5)}30%{opacity:.9;filter:blur(1px) brightness(1.8)}45%{opacity:.3}60%{opacity:1;transform:scale(.96);filter:none}75%{opacity:.6}100%{opacity:1;transform:none}}
-.cell.spin{animation:glitchRoll .36s steps(1) infinite;animation-delay:var(--gd,0s)}
-/* rolling: signal-glitch, not a 3D tumble. Each die jumps sideways, slices and flickers out of sync with its neighbours */
+.cell.spin{animation:glitchRoll .5s steps(1) infinite;animation-delay:var(--gd,0s)}
+/* rolling: a gentle signal-glitch. Small sideways jumps, one thin slice and a soft flicker, out of sync between dice */
 @keyframes glitchRoll{
-  0%{transform:translate(0,0);clip-path:inset(0);filter:brightness(1.7);box-shadow:-2px 0 0 rgba(224,70,82,.55),2px 0 0 rgba(85,230,165,.6)}
-  14%{transform:translate(-3px,1px);clip-path:inset(18% 0 38% 0);filter:brightness(2.3)}
-  28%{transform:translate(2px,-1px);clip-path:inset(0 0 58% 0);filter:brightness(1)}
-  42%{transform:translate(-1px,0);clip-path:inset(52% 0 0 0);box-shadow:2px 0 0 rgba(224,70,82,.55),-2px 0 0 rgba(85,230,165,.6)}
-  57%{transform:translate(3px,1px);clip-path:inset(0);opacity:.5}
-  71%{transform:translate(0,-2px);clip-path:inset(8% 0 12% 0);opacity:1;filter:brightness(1.9)}
-  85%{transform:translate(-2px,0);clip-path:inset(0);filter:brightness(1.2)}
+  0%{transform:none;clip-path:inset(0);filter:brightness(1.25);box-shadow:-1px 0 0 rgba(224,70,82,.3),1px 0 0 rgba(85,230,165,.35)}
+  25%{transform:translateX(-1px);filter:brightness(1)}
+  50%{transform:translateX(1px);clip-path:inset(30% 0 22% 0);filter:brightness(1.4)}
+  60%{clip-path:inset(0)}
+  75%{transform:none;opacity:.8;filter:brightness(1.1)}
 }
 .grid.rolled .cell.on.land:not(.six):not(.one){animation:land .35s ease-out both}
 @keyframes land{0%{transform:scale(1.12);filter:brightness(2.2)}100%{transform:none;filter:none}}
@@ -485,7 +483,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   // rolling happens in the tray cells themselves
   function animate(idx,done){
     if(reduce){done();return;}
-    idx.forEach(i=>{const c=cells[slots[i]]; c.style.setProperty('--gd',(-Math.random()*.36).toFixed(2)+'s'); c.classList.add('spin');});
+    idx.forEach(i=>{const c=cells[slots[i]]; c.style.setProperty('--gd',(-Math.random()*.5).toFixed(2)+'s'); c.classList.add('spin');});
     let t=0; timer=setInterval(()=>{
       idx.forEach(i=>setPips(cells[slots[i]],1+Math.floor(Math.random()*6)));
       if((t+=60)>=620){clearInterval(timer); timer=null; idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
