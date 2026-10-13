@@ -73,9 +73,23 @@ button{font:inherit;color:inherit;cursor:pointer}
 .right{flex:1;min-width:0;text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
 #hits{color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(85,230,165,.8)}
 .right .sub{height:var(--subh);line-height:var(--subh);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* the status line uses the full readout width (the pool side has nothing on that row) */
+.readout{position:relative}
+.right{padding-bottom:calc(var(--subh) + 3px)}
+.right .sub{position:absolute;right:0;bottom:0;max-width:100%}
 .right .sub:not(:empty)::before{content:"> ";color:var(--brass)}
 .right.idle #hits{color:var(--muted);text-shadow:none}
-#hits.tick{animation:tick .4s steps(5) both}
+#hits.tick,#crits.tick{animation:tick .4s steps(5) both}
+.res-big small{margin-right:2px}
+.crit-n{margin-left:12px;color:var(--seal-hi);text-shadow:0 0 12px var(--glow)}
+.crit-n b{font-size:calc(var(--big) * .74)}
+.right.idle .crit-n{display:none}
+.critrow{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:-2px}
+.seg{display:flex;border:1px solid var(--phos-dim)}
+.seg button{background:transparent;border:0;border-left:1px solid var(--phos-dim);color:var(--muted);font:600 11px/1 var(--term);letter-spacing:.08em;height:28px;min-width:44px;padding:0 10px;transition:background .15s,color .15s}
+.seg button:first-child{border-left:0}
+.seg button:hover{color:var(--ink);background:var(--brass-soft)}
+.seg button[aria-pressed="true"]{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 60%,var(--phos-deep));color:var(--phos-ink);box-shadow:0 0 12px var(--glow)}
 @keyframes tick{0%{opacity:.15}20%{opacity:1}40%{opacity:.45}60%{opacity:1}80%{opacity:.7}100%{opacity:1}}
 
 /* bracketed panel, as in the Codex */
@@ -210,6 +224,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
+@media (max-width:380px){.readout{--big:32px}.crit-n{margin-left:8px}}
 @media (max-height:620px){.big{font-size:30px}.readout{--big:30px}.die{max-width:42px}}
 @media (prefers-reduced-motion: reduce){
   body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
@@ -236,7 +251,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     </div>
     <div class="right idle" id="res" aria-live="polite">
       <div class="k-lbl">Result</div>
-      <div class="big" id="hits">--</div>
+      <div class="big res-big"><span id="hits">--</span><small>HITS</small><span class="crit-n"><b id="crits">0</b><small>CRIT</small></span></div>
       <div class="sub" id="sub">Tap a target to roll</div>
     </div>
   </div>
@@ -252,8 +267,9 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="btn" id="rerollFails" disabled>Re-roll fails</button>
       <button class="btn" id="removeFails" disabled>Remove fails</button>
     </div>
-    <div class="hint">Tap a target to roll · hits on that or higher</div>
+    <div class="hint">Tap a target to roll · hits on it or higher</div>
     <div class="faces" id="faces"></div>
+    <div class="critrow"><span class="k-lbl">Crit on</span><div class="seg" id="critSeg" role="group" aria-label="Critical hit threshold"></div></div>
   </div>
 </main>
 
@@ -274,14 +290,16 @@ button{font:inherit;color:inherit;cursor:pointer}
   const $=id=>document.getElementById(id);
   const grid=$('grid'), stage=$('stage'), facesEl=$('faces');
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let count=10, target=null, rolls=[], busy=false, timer=null, fresh=null, action='Rolled', slots=[];
+  let count=10, target=null, rolls=[], busy=false, timer=null, fresh=null, action='Rolled', slots=[], crit=6;
 
   const setPips=(el,v)=>{const on=PIPS[v]; el.querySelectorAll('i').forEach((p,i)=>p.classList.toggle('s',on.includes(i)));};
   // Rejection sampling: discard the top 4 values of the 32-bit range so all six faces are exactly equally likely
   const LIMIT=4294967292; // largest multiple of 6 that fits in 2^32
   const buf=new Uint32Array(1);
   const d6=()=>{do{crypto.getRandomValues(buf);}while(buf[0]>=LIMIT); return 1+(buf[0]%6);};
-  const isHit=v=>v>=target;
+  // crits are hits at or above the crit threshold, and always count as successes
+  const isCrit=v=>v>=crit;
+  const isHit=v=>v>=target||isCrit(v);
 
   // square tray sized to the space available
   function fit(){const s=Math.floor(Math.min(stage.clientWidth,stage.clientHeight)); grid.style.width=grid.style.height=s+'px';}
@@ -309,14 +327,15 @@ button{font:inherit;color:inherit;cursor:pointer}
     c.innerHTML='<i></i>'.repeat(9)+SKULL;
     grid.appendChild(c); cells.push(c);
   }
-  function tick(){const h=$('hits'); h.classList.remove('tick'); void h.offsetWidth; if(!reduce) h.classList.add('tick');}
+  function tick(){['hits','crits'].forEach(id=>{const h=$(id); h.classList.remove('tick'); void h.offsetWidth; if(!reduce) h.classList.add('tick');});}
+  const subText=(hits,n)=>target+'+ hit · '+crit+'+ crit · avg '+(n*(7-Math.min(target,crit))/6).toFixed(1);
 
   function clearRoll(){
     if(timer){clearInterval(timer);timer=null;busy=false;}
     rolls=[]; grid.classList.remove('rolled');
     cells.forEach(c=>{c.classList.remove('hit','miss','spin','land'); clearFx(c);});
     $('res').classList.add('idle');
-    $('hits').textContent='--';
+    $('hits').textContent='--'; $('crits').textContent='0';
     $('sub').textContent='Tap a target to roll';
     $('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
   }
@@ -370,7 +389,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     grid.classList.add('rolled');
     cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
     rolls.forEach((v,i)=>setPips(cells[slots[i]],v));
-    $('res').classList.remove('idle'); $('hits').textContent='--'; $('sub').textContent='Rolling';
+    $('res').classList.remove('idle'); $('hits').textContent='--'; $('crits').textContent='--'; $('sub').textContent='Rolling';
     lock(); animate(rolls.map((_,i)=>i),finish);
   }
   function rerollWhere(test,label){
@@ -383,15 +402,15 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
   // paint the current rolls; animIdx = dice that just landed (they flash, new 6s burst, new 1s glitch)
   function paintResult(animIdx){
-    let hits=0, sixNo=0;
+    let hits=0, crits=0, sixNo=0;
     rolls.forEach((v,i)=>{
-      const c=cells[slots[i]]; setPips(c,v); const h=isHit(v); if(h) hits++;
+      const c=cells[slots[i]]; setPips(c,v); const h=isHit(v); if(h) hits++; if(isCrit(v)) crits++;
       c.classList.toggle('hit',h); c.classList.toggle('miss',!h); c.classList.toggle('one',v===1);
       const isNew=!!animIdx&&animIdx.has(i);
       if(isNew){c.classList.remove('land'); void c.offsetWidth; c.classList.add('land');}
-      if(v===6){ if(isNew) sparkle(c,Math.min(sixNo++*40,400)); else if(!c.classList.contains('six')) sparkle(c,0,false); }
+      if(isCrit(v)){ if(isNew) sparkle(c,Math.min(sixNo++*40,400)); else if(!c.classList.contains('six')) sparkle(c,0,false); }
     });
-    return hits;
+    return {hits,crits};
   }
   function syncButtons(hits){
     const n=rolls.length;
@@ -414,9 +433,9 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
   function finish(){
     const idx=fresh||new Set(rolls.map((_,i)=>i)); fresh=null;
-    const hits=paintResult(idx), n=rolls.length;
-    $('hits').textContent=hits; tick();
-    $('sub').textContent=(hits===1?'hit':'hits')+' on '+target+'+ · avg '+(n*(7-target)/6).toFixed(1);
+    const {hits,crits}=paintResult(idx), n=rolls.length;
+    $('hits').textContent=hits; $('crits').textContent=crits; tick();
+    $('sub').textContent=subText(hits,n);
     syncButtons(hits); busy=false;
     record(action);
   }
@@ -430,9 +449,9 @@ button{font:inherit;color:inherit;cursor:pointer}
     if(kept.length===rolls.length) return;
     rolls=kept; count=kept.length; slots=lineSlots(count);
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
-    showCount(); paintResult(null); syncButtons(count);
+    showCount(); const {crits}=paintResult(null); syncButtons(count);
     if(count){
-      $('hits').textContent=count; tick();
+      $('hits').textContent=count; $('crits').textContent=crits; tick();
       $('sub').textContent=(count===1?'die':'dice')+' left in pool';
       record('Removed fails');
     }else{
@@ -460,18 +479,18 @@ button{font:inherit;color:inherit;cursor:pointer}
   function save(){try{sessionStorage.setItem('d6-tray-history',JSON.stringify(history));}catch(_){}}
   function record(label){
     const id=(history.length?history[history.length-1].id:0)+1;
-    history.push({id,t:Date.now(),label,target,rolls:rolls.slice(),hitsText:$('hits').textContent,sub:$('sub').textContent});
+    history.push({id,t:Date.now(),label,target,rolls:rolls.slice(),crit,critsText:$('crits').textContent,hitsText:$('hits').textContent,sub:$('sub').textContent});
     if(history.length>200) history.shift();
     curId=id; save(); renderHistory();
   }
   function restore(id){
     const e=history.find(x=>x.id===id); if(!e||busy) return;
-    target=e.target; markFaces();
+    target=e.target; markFaces(); crit=e.crit||6; markCrit();
     rolls=e.rolls.slice(); count=rolls.length; slots=lineSlots(count);
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
-    const hits=paintResult(null);
-    $('hits').textContent=e.hitsText; tick(); $('sub').textContent=e.sub;
+    const {hits,crits}=paintResult(null);
+    $('hits').textContent=e.hitsText; $('crits').textContent=e.critsText!=null?e.critsText:crits; tick(); $('sub').textContent=e.sub;
     syncButtons(hits); curId=id; renderHistory(); closeSheet();
   }
   const fmtTime=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
@@ -480,11 +499,12 @@ button{font:inherit;color:inherit;cursor:pointer}
     const list=$('histList');
     if(!history.length){list.innerHTML='<li class="h-empty">No rolls logged. Every roll this session lands here; tap one to restore it.</li>'; return;}
     list.innerHTML=history.slice().reverse().map(e=>{
-      const strip=e.rolls.map(v=>'<i class="'+(v===6?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
+      const ec=e.crit||6, strip=e.rolls.map(v=>'<i class="'+(v>=ec?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
+      const nc=e.critsText!=null?e.critsText:e.rolls.filter(v=>v>=ec).length;
       return '<li><button class="h-item'+(e.id===curId?' cur':'')+'" data-id="'+e.id+'">'+
         '<span class="h-dot"></span>'+
         '<span class="h-hits">'+e.hitsText+'</span>'+
-        '<span class="h-mid"><span class="h-title">'+e.label+' · '+e.rolls.length+'D6 · '+e.target+'+</span><span class="strip">'+strip+'</span></span>'+
+        '<span class="h-mid"><span class="h-title">'+e.label+' · '+e.rolls.length+'D6 · '+e.target+'+ · '+nc+' crit'+(ec!==6?' ('+ec+'+)':'')+'</span><span class="strip">'+strip+'</span></span>'+
         '<span class="h-time">'+(e.id===curId?'NOW':fmtTime(e.t))+'</span></button></li>';
     }).join('');
   }
@@ -501,7 +521,27 @@ button{font:inherit;color:inherit;cursor:pointer}
     history=[]; curId=null; save(); renderHistory();
   };
 
-  count=0; setCount(10); markFaces(); renderHistory(); fit();
+  // crit threshold: one choice, 2+ to 6+; changing it re-reads the dice already in the tray
+  for(let v=2;v<=6;v++){
+    const b=document.createElement('button'); b.textContent=v+'+'; b.setAttribute('aria-label','Critical hits on '+v+' or higher');
+    b.onclick=()=>setCrit(v); $('critSeg').appendChild(b);
+  }
+  function markCrit(){[...$('critSeg').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i+2===crit)));}
+  function setCrit(v){
+    if(busy||v===crit) return; crit=v; markCrit();
+    if(!rolls.length||!target) return;
+    cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
+    const {hits,crits}=paintResult(null);
+    if(!$('res').classList.contains('idle')){
+      $('hits').textContent=hits; $('crits').textContent=crits; tick();
+      $('sub').textContent=subText(hits,rolls.length);
+    }
+    syncButtons(hits);
+    const e=history.find(x=>x.id===curId);
+    if(e){e.crit=crit; e.critsText=String(crits); e.hitsText=$('hits').textContent; e.sub=$('sub').textContent; save(); renderHistory();}
+  }
+
+  count=0; setCount(10); markFaces(); markCrit(); renderHistory(); fit();
 })();
 </script>
 </body>
