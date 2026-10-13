@@ -79,6 +79,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .readout{position:relative}
 .right{padding-bottom:calc(var(--subh) + 3px)}
 .right .sub{position:absolute;right:0;bottom:0;max-width:100%}
+/* the status line under the result is hidden; the readout keeps just the label and numbers */
+.right .sub{display:none!important}
+.left{padding-bottom:0}
+.right{padding-bottom:0}
 .right .sub:not(:empty)::before{content:"> ";color:var(--brass)}
 .right.idle #hits{color:var(--muted);text-shadow:none}
 #hits.tick,#crits.tick{animation:tick .4s steps(5) both}
