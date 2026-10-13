@@ -12,5 +12,7 @@ Open `index.html` in any browser. It's a single file with no build step or depen
 
 Rolls use the browser's cryptographic random generator (`crypto.getRandomValues`) with rejection sampling, so every face is exactly equally likely.
 
-## Host it on GitHub Pages
-Settings → Pages → Source: *Deploy from a branch* → `main` / root. The app will be live at `https://kristopherencarnacao-cmyk.github.io/DiceHammer/`.
+## Live app
+https://kristopherencarnacao-cmyk.github.io/DiceHammer/
+
+Every push to `main` redeploys the site automatically through GitHub Actions (`.github/workflows/pages.yml`). One-time setup: **Settings → Pages → Source: GitHub Actions**.
