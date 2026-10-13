@@ -20,7 +20,7 @@
   color-scheme:dark;
   --ash:#05070a; --slab:#0e1217; --raise:#151a21; --ink:#dfe4ea; --muted:#8792a0; --rule:#232b35;
   --brass:#55e6a5; --seal-hi:#8af5c4; --phos-deep:#2a9d6c; --brass-soft:#0b231b; --phos-dim:#1f5a45; --phos-ink:#02140d;
-  --danger:#e04652; --blood:#1f080c; --blood-hi:#45121a;
+  --danger:#e04652; --gold:#f5c451; --gold-glow:rgba(245,196,81,.45); --blood:#1f080c; --blood-hi:#45121a;
   --glow:rgba(85,230,165,.45); --glow-soft:rgba(85,230,165,.18); --red-glow:rgba(224,70,82,.45); --deep-shadow:rgba(0,0,0,.6);
   --term:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono","Courier New",monospace;
 }
@@ -89,8 +89,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .stat{display:flex;flex-direction:column;gap:3px;align-items:flex-end;min-width:2ch}
 .stat .k-lbl::before{content:none}
 .stat .big{min-width:2ch;text-align:right}
-#crits{color:var(--seal-hi);text-shadow:0 0 12px var(--glow)}
-#fails{color:var(--muted)}
+#crits{color:var(--gold);text-shadow:0 0 12px var(--gold-glow),0 0 2px rgba(245,196,81,.8)}
+#fails{color:var(--danger);text-shadow:0 0 12px var(--red-glow)}
 .right.idle .stat .big{color:var(--muted);text-shadow:none;opacity:.6}
 #hits.tick,#crits.tick,#fails.tick{animation:tick .4s steps(5) both}
 .critrow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:center;justify-items:center;margin-top:-4px}
