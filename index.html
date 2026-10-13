@@ -59,7 +59,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .btn.primary:hover:not(:disabled){background:var(--seal-hi);border-color:var(--seal-hi)}
 .btn.primary:disabled{background:transparent;color:var(--muted);border-color:var(--phos-dim);box-shadow:none;opacity:.5}
 .hist{height:30px;padding-inline:10px;display:inline-flex;align-items:center;gap:8px}
-.hist::before{content:"[";opacity:.6}.hist::after{content:"]";opacity:.6}
 .hist .n{color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* readout */
@@ -416,7 +415,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
       <div class="menu frame" id="menu" hidden>
         <button class="m-item" id="histBtn">Roll log <span class="n" id="histN">0</span></button>
         <button class="m-item" id="guideBtn" aria-haspopup="dialog">Guide <span class="n">?</span></button>
-        <div class="m-size"><div>Dice pool<small id="sizeNote">8×8 · up to 64</small></div><div class="m-seg" id="sizeSeg" role="radiogroup" aria-label="Dice pool size"><button role="radio" data-size="s" aria-label="Small, 5 by 5">S</button><button role="radio" data-size="m" aria-label="Medium, 8 by 8">M</button><button role="radio" data-size="l" aria-label="Large, 12 by 12">L</button></div></div>
+        <div class="m-size"><div>Dice pool</div><div class="m-seg" id="sizeSeg" role="radiogroup" aria-label="Dice pool size"><button role="radio" data-size="s" aria-label="Small, 5 by 5">S</button><button role="radio" data-size="m" aria-label="Medium, 8 by 8">M</button><button role="radio" data-size="l" aria-label="Large, 12 by 12">L</button></div></div>
       </div>
     </div>
   </header>
@@ -864,7 +863,6 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
 
   function markSize(){
     $('sizeSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.size===size)));
-    $('sizeNote').textContent=N+'×'+N+' · up to '+N*N;
   }
   // changing size rebuilds the tray, keeps the pool if it still fits (otherwise trims it) and clears the current roll
   function setSize(k,quiet){
