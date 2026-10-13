@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#05070a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DiceHammer">
+<meta name="apple-mobile-web-app-title" content="PhosphorDice">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
-<title>DiceHammer</title>
+<title>PhosphorDice</title>
 <style>
 /* Layout: one-screen phosphor terminal — header strip, pool/result readout, bracketed 8×8 tray that fills spare height, control bar.
    Deliberately one look: cold black, ash-white text, phosphor green as the only accent, blood red for 1s. */
@@ -313,9 +313,9 @@ body.size-l .readout{--big:28px}
 .ga{width:100%;height:100%;position:relative;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 /* 1 welcome: typed title over a row of flickering dice */
 .ga-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-.gw-title{font-size:26px;font-weight:700;letter-spacing:.18em;color:var(--brass);text-shadow:0 0 12px var(--glow);overflow:hidden;white-space:nowrap;width:0;animation:gType 1.6s steps(10) .2s forwards}
+.gw-title{font-size:26px;font-weight:700;letter-spacing:.18em;color:var(--brass);text-shadow:0 0 12px var(--glow);overflow:hidden;white-space:nowrap;width:0;animation:gType 1.8s steps(12) .2s forwards}
 .gw-title i{display:inline-block;width:.5em;height:.8em;background:var(--brass);margin-left:4px;animation:blink 1s steps(1) infinite}
-@keyframes gType{to{width:12.6ch}}
+@keyframes gType{to{width:15.4ch}}
 .gw-dice{display:flex;gap:8px}
 .gw-dice span{width:22px;height:22px;border:1px solid var(--phos-dim);background:var(--raise);animation:gFlick 2.4s infinite}
 .gw-dice span:nth-child(2){animation-delay:.4s}.gw-dice span:nth-child(3){animation-delay:.8s}.gw-dice span:nth-child(4){animation-delay:1.2s}.gw-dice span:nth-child(5){animation-delay:1.6s}.gw-dice span:nth-child(6){animation-delay:2s}
@@ -392,7 +392,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
 
 <main class="app">
   <header class="mast">
-    <div class="eyebrow">DiceHammer<span class="cursor" aria-hidden="true"></span></div>
+    <div class="eyebrow">PhosphorDice<span class="cursor" aria-hidden="true"></span></div>
     <div class="menu-wrap">
       <button class="btn hist" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><span class="burger" aria-hidden="true"><i></i><i></i><i></i></span>Menu</button>
       <div class="menu frame" id="menu" hidden>
@@ -752,13 +752,13 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   const pairs=(die,app)=>{ // real dice (grey) beside the app (green) for each face, same 16.4–17.0% axis
     const h=v=>((v-16.4)/0.6*100).toFixed(1);
     return '<div class="ga ga-bars" style="--fair:'+h(100/6)+'"><div class="gb-plot">'+die.map((v,k)=>'<div class="gb-col"><div class="gb-pair"><i class="d" style="--h:'+h(v)+'"></i><i class="a" style="--h:'+h(app[k])+'"></i></div></div>').join('')+
-      '</div><div class="gb-x">'+[1,2,3,4,5,6].map(n=>'<span>'+n+'</span>').join('')+'</div><div class="gb-cap"><span><u class="kd"></u>Real dice <u class="ka"></u>DiceHammer</span><em>--- fair</em></div></div>';
+      '</div><div class="gb-x">'+[1,2,3,4,5,6].map(n=>'<span>'+n+'</span>').join('')+'</div><div class="gb-cap"><span><u class="kd"></u>Real dice <u class="ka"></u>PhosphorDice</span><em>--- fair</em></div></div>';
   };
   const dieArt='<div class="gv-die">'+[0,1,2,3,4,5,6,7,8].map(i=>'<i class="'+([0,2,3,5,6,8].includes(i)?'s':'')+'"></i>').join('')+'</div>';
   const GUIDE=[
-    {t:'Welcome to DiceHammer',b:'A dice tray for big tabletop wargame rolls. Before you start, here is how fair each roll is.',
-     art:'<div class="ga ga-welcome"><div class="gw-title">DICEHAMMER<i></i></div><div class="gw-dice"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>'},
-    {t:'Fairer than real dice',b:'Real dice favour some faces, and throws lean toward the side that starts face-up. DiceHammer’s <b>secure random generator</b> makes every face <b>exactly 1 in 6</b>.',
+    {t:'Welcome to PhosphorDice',b:'A dice tray for big tabletop wargame rolls. Before you start, here is how fair each roll is.',
+     art:'<div class="ga ga-welcome"><div class="gw-title">PHOSPHORDICE<i></i></div><div class="gw-dice"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>'},
+    {t:'Fairer than real dice',b:'Real dice favour some faces, and throws lean toward the side that starts face-up. PhosphorDice’s <b>secure random generator</b> makes every face <b>exactly 1 in 6</b>.',
      cite:'Sources: <a href="https://doi.org/10.1080/01621459.2025.2516210" target="_blank" rel="noopener">Bartoš et al., JASA, 2025</a> (350,757 coin flips) · <a href="https://doi.org/10.1063/1.4746038" target="_blank" rel="noopener">Kapitaniak et al., Chaos, 2012</a> (dice) · chart: <a href="https://www.gwern.net/doc/statistics/probability/2009-labby.pdf" target="_blank" rel="noopener">Labby, CHANCE, 2009</a>',
      art:pairs([16.86,16.51,16.62,16.58,16.55,16.88],[16.67,16.68,16.69,16.65,16.65,16.66])},
     {t:'Fair, just steadier',b:'Neither is “truly” random: a die is physics too quick to predict, the app is maths too secure to predict. Both are fair; the app just never wobbles. Reopen this from <b>? Guide</b>.',

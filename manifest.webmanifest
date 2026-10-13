@@ -1,6 +1,6 @@
 {
-  "name": "DiceHammer",
-  "short_name": "DiceHammer",
+  "name": "PhosphorDice",
+  "short_name": "PhosphorDice",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

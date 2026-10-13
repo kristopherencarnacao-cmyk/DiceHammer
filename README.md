@@ -1,4 +1,4 @@
-# DiceHammer
+# PhosphorDice
 A simple dice rolling app for tabletop wargames, built to make big rolls, like a horde of shooters hitting on 6+, go a bit faster.
 
 ## Use it
