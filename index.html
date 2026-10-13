@@ -320,7 +320,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="btn step" id="minus" aria-label="One fewer die">−</button>
       <div class="pool">
         <div class="k-lbl">Pool</div>
-        <div class="big" id="count"><span class="n">10</span><small>D6</small></div>
+        <div class="big" id="count"><span class="n">10</span></div>
       </div>
       <button class="btn step" id="plus" aria-label="One more die">+</button>
     </div>
@@ -513,7 +513,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       if(!now) c.classList.remove('drop');
       c.classList.toggle('on',now);
     });
-    $('count').innerHTML='<span class="n">'+count+'</span><small>D6</small>';
+    $('count').innerHTML='<span class="n">'+count+'</span>';
   }
   function finish(){
     const idx=fresh||new Set(rolls.map((_,i)=>i)); fresh=null;
