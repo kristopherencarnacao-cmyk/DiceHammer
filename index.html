@@ -31,7 +31,7 @@ body{background-color:var(--ash);color:var(--ink);font-family:var(--term);font-s
   background-image:radial-gradient(ellipse 110% 70% at 50% 0%,rgba(60,140,110,.10),transparent 60%),radial-gradient(ellipse 120% 90% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
 /* CRT: scanlines, vignette and a slow sweep, never blocking input */
 body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
-  background:repeating-linear-gradient(180deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px),radial-gradient(ellipse 120% 100% at 50% 50%,transparent 60%,rgba(0,0,0,.45) 100%);mix-blend-mode:multiply}
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px),radial-gradient(ellipse 120% 100% at 50% 50%,transparent 60%,rgba(0,0,0,.42) 100%)}
 body::before{content:"";position:fixed;left:0;right:0;top:-20%;height:20%;pointer-events:none;z-index:9998;
   background:linear-gradient(180deg,transparent,rgba(85,230,165,.035),transparent);animation:sweep 7s linear infinite}
 @keyframes sweep{to{transform:translateY(600%)}}
@@ -343,6 +343,25 @@ body.flicker::after{background:repeating-linear-gradient(180deg,rgba(0,0,0,.5) 0
 body.flicker .app{animation:crtFlicker .7s steps(1) both}
 @keyframes crtFlicker{0%{filter:brightness(1.5);transform:translateX(-2px)}12%{filter:brightness(.55);transform:translateX(2px)}24%{filter:brightness(1.3);transform:none}38%{filter:brightness(.75);transform:translate(1px,-1px)}52%{filter:brightness(1.15);transform:none}66%{filter:brightness(.85);transform:translateX(-1px)}80%{filter:brightness(1.05);transform:none}100%{filter:none;transform:none}}
 @media (prefers-reduced-motion:reduce){body.flicker .crt-band,body.flicker::after,body.flicker .app{animation:none}}
+/* ---- lite mode for the 16×16 tray: same look, far less work per frame ---- */
+/* one glitch on the whole tray instead of 256 separate ones */
+.grid.glitching{animation:trayGlitch .5s steps(1) infinite}
+@keyframes trayGlitch{0%{transform:none;filter:brightness(1.15)}25%{transform:translateX(-1px)}50%{transform:translateX(1px);filter:brightness(1.3)}75%{transform:none;filter:none}}
+/* flat dice: one outline instead of layered shadows, no pip glow */
+.grid[data-size="l"] .cell.on,.grid[data-size="l"] .die{box-shadow:inset 0 0 0 1px var(--phos-dim)}
+.grid[data-size="l"] .cell.on i{box-shadow:none}
+.grid[data-size="l"] .cell.hit{box-shadow:inset 0 0 0 1px var(--brass)!important}
+.grid[data-size="l"].rolled .cell.on.six{box-shadow:inset 0 0 0 1px var(--seal-hi)!important}
+.grid[data-size="l"].rolled .cell.on.one{box-shadow:inset 0 0 0 1px var(--danger)!important}
+.grid[data-size="l"].rolled .cell.on.one svg{filter:none}
+/* steady crits: no endless pulse or twinkle, no landing flashes */
+.grid[data-size="l"] .cell.six::after{animation:none;opacity:.45;box-shadow:0 0 6px 1px var(--glow)}
+.grid[data-size="l"] .cell.six{animation:none}
+.grid[data-size="l"].rolled .cell.on.land{animation:none!important}
+/* dice fade in without blur */
+.grid[data-size="l"] .cell.drop{animation:matLite .3s ease-out both;animation-delay:var(--dd,0ms)}
+@keyframes matLite{0%{opacity:0;transform:scale(1.25)}60%{opacity:1}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.grid.glitching{animation:none}}
 @media (max-height:620px){.big{font-size:30px}.readout{--big:30px}.die{max-width:42px}}
 @media (prefers-reduced-motion: reduce){
   body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
@@ -442,17 +461,17 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
 
   const SKULL='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M12 2a8 8 0 0 0-8 8c0 2.6 1.2 4.6 3 5.8V19a1 1 0 0 0 1 1h1v-2h1.5v2h3v-2H15v2h1a1 1 0 0 0 1-1v-3.2c1.8-1.2 3-3.2 3-5.8a8 8 0 0 0-8-8zM6.6 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0zM13 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0zM12 13.6l-1.3 2.3h2.6z"/></svg>';
   function clearFx(c){c.classList.remove('one','six','quiet'); c.style.removeProperty('--d'); c.querySelectorAll('.spark,.tw').forEach(x=>x.remove());}
-  function sparkle(c,delay,burst=true){
+  function sparkle(c,delay,burst=true,rad){
     c.style.setProperty('--d',delay+'ms');
-    c.classList.remove('six'); void c.offsetWidth; c.classList.add('six');
+    c.classList.add('six');
     if(!burst) c.classList.add('quiet');
-    if(reduce) return;
+    if(reduce||(size==='l'&&!burst)) return;
     const tw=document.createElement('span'); tw.className='tw'; tw.innerHTML='<s></s><s></s><s></s>';
     tw.querySelectorAll('s').forEach(x=>x.style.animationDelay=(delay/1000+.9+Math.random()*1.4).toFixed(2)+'s');
     c.appendChild(tw);
     if(!burst) return;
     const s=document.createElement('span'); s.className='spark';
-    const r=Math.round(c.offsetWidth*.85);
+    const r=rad||Math.round(c.offsetWidth*.85);
     for(let k=0;k<8;k++){const p=document.createElement('s'); p.style.setProperty('--a',(k*45+Math.random()*20-10)+'deg'); p.style.setProperty('--r',(r*(.7+Math.random()*.5))+'px'); s.appendChild(p);}
     c.appendChild(s); setTimeout(()=>s.remove(),800+delay);
   }
@@ -519,11 +538,15 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   // rolling happens in the tray cells themselves
   function animate(idx,done){
     if(reduce){done();return;}
-    idx.forEach(i=>{const c=cells[slots[i]]; c.style.setProperty('--gd',(-Math.random()*.5).toFixed(2)+'s'); c.classList.add('spin');});
+    const lite=size==='l';
+    if(lite) grid.classList.add('glitching');   // large tray: glitch the tray once, not each die
+    else idx.forEach(i=>{const c=cells[slots[i]]; c.style.setProperty('--gd',(-Math.random()*.5).toFixed(2)+'s'); c.classList.add('spin');});
+    const step=lite?120:60;
     let t=0; timer=setInterval(()=>{
-      idx.forEach(i=>setPips(cells[slots[i]],1+Math.floor(Math.random()*6)));
-      if((t+=60)>=620){clearInterval(timer); timer=null; idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
-    },60);
+      // large tray: shuffle a quarter of the faces each tick instead of every die
+      idx.forEach(i=>{ if(!lite||Math.random()<.25) setPips(cells[slots[i]],1+Math.floor(Math.random()*6)); });
+      if((t+=step)>=620){clearInterval(timer); timer=null; grid.classList.remove('glitching'); idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
+    },step);
   }
   function lock(){$('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
   function roll(){
@@ -546,14 +569,20 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   }
   // paint the current rolls; animIdx = dice that just landed (they flash, new 6s burst, new 1s glitch)
   function paintResult(animIdx){
-    let hits=0, crits=0, sixNo=0;
+    let hits=0, crits=0, sixNo=0; const landing=[], bursts=[];
     rolls.forEach((v,i)=>{
       const c=cells[slots[i]]; setPips(c,v); const h=isHit(v); if(h) hits++; if(isCrit(v)) crits++;
       c.classList.toggle('hit',h); c.classList.toggle('miss',!h); c.classList.toggle('one',v===1);
       const isNew=!!animIdx&&animIdx.has(i);
-      if(isNew){c.classList.remove('land'); void c.offsetWidth; c.classList.add('land');}
-      if(isCrit(v)){ if(isNew) sparkle(c,Math.min(sixNo++*40,400)); else if(!c.classList.contains('six')) sparkle(c,0,false); }
+      if(isNew){ c.classList.remove('land'); landing.push(c); }
+      if(isCrit(v)){ if(isNew&&(size!=='l'||sixNo<6)){ c.classList.remove('six'); bursts.push([c,Math.min(sixNo++*40,400)]); } else if(!c.classList.contains('six')) sparkle(c,0,false); }
     });
+    // one layout pass for the whole tray (doing this per die froze the 256-die tray for seconds)
+    if(landing.length||bursts.length){
+      void grid.offsetWidth; const rad=Math.round(cells[0].offsetWidth*.85);
+      landing.forEach(c=>c.classList.add('land'));
+      bursts.forEach(([c,d])=>sparkle(c,d,true,rad));
+    }
     return {hits,crits};
   }
   function syncButtons(hits){
@@ -563,16 +592,17 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   }
   // newly added dice materialise in their slot showing a random resting face
   function showCount(){
-    const on=new Set(slots); let k=0;
+    const on=new Set(slots); let k=0; const dropping=[];
     cells.forEach((c,i)=>{
       const was=c.classList.contains('on'), now=on.has(i);
       if(now&&!was){
         setPips(c,1+Math.floor(Math.random()*6));
-        if(!reduce){c.style.setProperty('--dd',Math.min(k++*22,300)+'ms'); c.classList.remove('drop'); void c.offsetWidth; c.classList.add('drop');}
+        if(!reduce){ c.style.setProperty('--dd',Math.min(k++*(size==='l'?6:22),300)+'ms'); c.classList.remove('drop'); dropping.push(c); }
       }
       if(!now) c.classList.remove('drop');
       c.classList.toggle('on',now);
     });
+    if(dropping.length){ void grid.offsetWidth; dropping.forEach(c=>c.classList.add('drop')); }
     $('count').innerHTML='<span class="n">'+count+'</span>';
   }
   function finish(){
@@ -612,7 +642,7 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
     rolls.sort((a,b)=>b-a);
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     paintResult(null);
-    if(!reduce) rolls.forEach((v,i)=>{const c=cells[slots[i]]; void c.offsetWidth; c.classList.add('land');});
+    if(!reduce){ void grid.offsetWidth; rolls.forEach((v,i)=>cells[slots[i]].classList.add('land')); }
     const e=history.find(x=>x.id===curId);
     if(e&&e.rolls.length===rolls.length){e.rolls=rolls.slice(); save(); renderHistory();}
   }
