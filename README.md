@@ -1,5 +1,5 @@
 # DiceHammer
-A simple dice rolling app designed to make those shooting Ork hoards hitting on 6+ go a bit faster.
+A simple dice rolling app for tabletop wargames, built to make big rolls, like a horde of shooters hitting on 6+, go a bit faster.
 
 ## Use it
 Open `index.html` in any browser. It's a single file with no build step or dependencies, so it works offline once loaded.

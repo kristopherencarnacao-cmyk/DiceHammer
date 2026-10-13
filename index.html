@@ -14,8 +14,8 @@
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 <title>DiceHammer</title>
 <style>
-/* Layout: one-screen auspex terminal — header strip, pool/result readout, bracketed 8×8 tray that fills spare height, control bar.
-   Deliberately one look, shared with Dominatus Codex: cold black, ash-white text, phosphor green as the only accent, blood red for 1s. */
+/* Layout: one-screen phosphor terminal — header strip, pool/result readout, bracketed 8×8 tray that fills spare height, control bar.
+   Deliberately one look: cold black, ash-white text, phosphor green as the only accent, blood red for 1s. */
 :root{
   color-scheme:dark;
   --ash:#05070a; --slab:#0e1217; --raise:#151a21; --ink:#dfe4ea; --muted:#8792a0; --rule:#232b35;
@@ -232,7 +232,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .h-empty{color:var(--muted);font-size:12px;letter-spacing:.04em;text-align:center;padding:28px 16px}
 .h-empty::before{content:"> ";color:var(--brass)}
 
-/* curved CRT glass, as in Dominatus Codex: rounded bezel corners, barrel shading and a glass highlight (visual only, never blocks input) */
+/* curved CRT glass: rounded bezel corners, barrel shading and a glass highlight (visual only, never blocks input) */
 .crt-glass{position:fixed;inset:0;pointer-events:none;z-index:10000;border-radius:clamp(18px,4vw,42px)/clamp(24px,5vw,56px);
   box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 26px 6px rgba(0,0,0,.85),inset 0 0 120px 20px rgba(0,0,0,.45)}
 .crt-glass .crt-bulge{position:absolute;inset:0;border-radius:inherit;
@@ -243,7 +243,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
 @media (max-width:380px){.readout{--big:32px}.stats{gap:12px}}
-/* ---------- guide: a short animated slide show, as in Dominatus Codex ---------- */
+/* ---------- guide: a short animated slide show ---------- */
 /* header menu: Roll log and Guide */
 .menu-wrap{position:relative}
 .burger{display:inline-flex;flex-direction:column;gap:3px;margin-right:2px}.burger i{display:block;width:12px;height:2px;background:currentColor}
@@ -668,7 +668,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   };
   const dieArt='<div class="gv-die">'+[0,1,2,3,4,5,6,7,8].map(i=>'<i class="'+([0,2,3,5,6,8].includes(i)?'s':'')+'"></i>').join('')+'</div>';
   const GUIDE=[
-    {t:'Welcome to DiceHammer',b:'A dice tray for big Warhammer rolls. Before you start, here is how fair each roll is.',
+    {t:'Welcome to DiceHammer',b:'A dice tray for big tabletop wargame rolls. Before you start, here is how fair each roll is.',
      art:'<div class="ga ga-welcome"><div class="gw-title">DICEHAMMER<i></i></div><div class="gw-dice"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>'},
     {t:'Fairer than real dice',b:'Real dice favour some faces, and throws lean toward the side that starts face-up. DiceHammer’s <b>secure random generator</b> makes every face <b>exactly 1 in 6</b>.',
      cite:'Sources: <a href="https://doi.org/10.1080/01621459.2025.2516210" target="_blank" rel="noopener">Bartoš et al., JASA, 2025</a> (350,757 coin flips) · <a href="https://doi.org/10.1063/1.4746038" target="_blank" rel="noopener">Kapitaniak et al., Chaos, 2012</a> (dice) · chart: <a href="https://www.gwern.net/doc/statistics/probability/2009-labby.pdf" target="_blank" rel="noopener">Labby, CHANCE, 2009</a>',
