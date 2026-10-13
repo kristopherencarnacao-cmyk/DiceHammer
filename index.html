@@ -278,6 +278,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .gb-x{display:flex;gap:10px;padding:4px 6px 0}.gb-x span{flex:1;text-align:center;color:var(--ink)}
 .gb-cap{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:9px;letter-spacing:.06em;white-space:nowrap}
 .gb-cap em{font-style:normal;color:var(--muted)}
+.gb-pair{display:flex;align-items:flex-end;gap:2px;width:100%;height:100%}
+.gb-pair i{flex:1}
+.gb-pair i.a{background:var(--brass);box-shadow:0 0 8px var(--glow-soft)}
+.gb-cap u{display:inline-block;width:8px;height:8px;margin:0 5px 0 0;vertical-align:-1px;background:var(--muted)}
+.gb-cap u.ka{background:var(--brass);margin-left:10px}
 /* 4 two sources side by side */
 .ga-vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:0 16px}
 .gv{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;line-height:1.4}
@@ -628,14 +633,17 @@ button{font:inherit;color:inherit;cursor:pointer}
     return '<div class="ga ga-bars '+cls+'" style="--fair:'+h(100/6)+'"><div class="gb-plot">'+vals.map(v=>'<div class="gb-col"><b>'+v.toFixed(2)+'</b><i style="--h:'+h(v)+'"></i></div>').join('')+
       '</div><div class="gb-x">'+[1,2,3,4,5,6].map(n=>'<span>'+n+'</span>').join('')+'</div><div class="gb-cap"><span>'+cap+'</span><em>--- fair</em></div></div>';
   };
+  const pairs=(die,app)=>{ // real dice (grey) beside the app (green) for each face, same 16.4–17.0% axis
+    const h=v=>((v-16.4)/0.6*100).toFixed(1);
+    return '<div class="ga ga-bars" style="--fair:'+h(100/6)+'"><div class="gb-plot">'+die.map((v,k)=>'<div class="gb-col"><div class="gb-pair"><i class="d" style="--h:'+h(v)+'"></i><i class="a" style="--h:'+h(app[k])+'"></i></div></div>').join('')+
+      '</div><div class="gb-x">'+[1,2,3,4,5,6].map(n=>'<span>'+n+'</span>').join('')+'</div><div class="gb-cap"><span><u class="kd"></u>Real dice <u class="ka"></u>DiceHammer</span><em>--- fair</em></div></div>';
+  };
   const dieArt='<div class="gv-die">'+[0,1,2,3,4,5,6,7,8].map(i=>'<i class="'+([0,2,3,5,6,8].includes(i)?'s':'')+'"></i>').join('')+'</div>';
   const GUIDE=[
-    {t:'Welcome to DiceHammer',b:'A dice tray for big Warhammer rolls. Before you start, here is how fair each roll is, in four quick screens.',
+    {t:'Welcome to DiceHammer',b:'A dice tray for big Warhammer rolls. Before you start, here is how fair each roll is.',
      art:'<div class="ga ga-welcome"><div class="gw-title">DICEHAMMER<i></i></div><div class="gw-dice"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>'},
-    {t:'Real dice lean a little',b:'Machine-rolled tests of real dice found some faces turning up more than others. Tiny flaws in the cube and the way you throw tilt them slightly.',
-     art:bars([16.86,16.51,16.62,16.58,16.55,16.88],'ga-die','Real dice · Labby 2009')},
-    {t:'The app has no lean',b:'Every roll uses your device’s <b>secure random generator</b>, the kind used for encryption. Each face is <b>exactly 1 in 6</b>, every die is rolled fresh, and no throw can tilt it.',
-     art:bars([16.67,16.68,16.69,16.65,16.65,16.66],'ga-app','DiceHammer · 6M test rolls')},
+    {t:'Fairer than real dice',b:'Tests of real dice found some faces coming up more often, from tiny flaws and how they’re thrown. DiceHammer uses your device’s <b>secure random generator</b>: every face is <b>exactly 1 in 6</b>.',
+     art:pairs([16.86,16.51,16.62,16.58,16.55,16.88],[16.67,16.68,16.69,16.65,16.65,16.66])},
     {t:'Fair, just steadier',b:'Neither is “truly” random. A die is physics too quick to predict; the app is maths too secure to predict. Both are fair at the table, and the app never wobbles. Reopen this any time from <b>? Guide</b>.',
      art:'<div class="ga ga-vs"><div class="gv">'+dieArt+'<b>Die</b><span>physics</span></div><div class="gv-eq">≈</div><div class="gv"><div class="gv-chip"></div><b>App</b><span>secure maths</span></div></div>'}
   ];
