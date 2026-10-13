@@ -359,6 +359,8 @@ body.flicker::after{background:repeating-linear-gradient(180deg,rgba(0,0,0,.5) 0
 @keyframes scanJump{0%{background-position:0 0,0 0}25%{background-position:0 2px,0 0}50%{background-position:0 1px,0 0}75%{background-position:0 3px,0 0}}
 body.flicker .app{animation:crtFlicker .7s steps(1) both}
 @keyframes crtFlicker{0%{filter:brightness(1.5);transform:translateX(-2px)}12%{filter:brightness(.55);transform:translateX(2px)}24%{filter:brightness(1.3);transform:none}38%{filter:brightness(.75);transform:translate(1px,-1px)}52%{filter:brightness(1.15);transform:none}66%{filter:brightness(.85);transform:translateX(-1px)}80%{filter:brightness(1.05);transform:none}100%{filter:none;transform:none}}
+/* button-triggered flicker runs at double speed */
+body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{animation-duration:.35s}
 @media (prefers-reduced-motion:reduce){body.flicker .crt-band,body.flicker::after,body.flicker .app{animation:none}}
 /* ---- lite mode for the 12×12 tray: same look, far less work per frame ---- */
 /* one glitch on the whole tray instead of 256 separate ones */
@@ -812,10 +814,11 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   $('sizeSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) setSize(b.dataset.size);});
 
   // random CRT flicker roughly once a minute (45–75 s apart), skipped when the tab is hidden or motion is reduced
-  function flicker(){ if(reduce||document.hidden) return; const b=document.body; b.classList.remove('flicker'); void b.offsetWidth; b.classList.add('flicker'); setTimeout(()=>b.classList.remove('flicker'),750); }
+  let flickT=null;
+  function flicker(fast){ if(reduce||document.hidden) return; const b=document.body; clearTimeout(flickT); b.classList.remove('flicker','fast'); void b.offsetWidth; b.classList.toggle('fast',!!fast); b.classList.add('flicker'); flickT=setTimeout(()=>b.classList.remove('flicker','fast'),fast?400:750); }
   (function schedule(){ setTimeout(()=>{ flicker(); schedule(); }, 45000+Math.random()*30000); })();
   // the action buttons above the dice (Sort, Re-roll 1s, Re-roll fails, Remove fails) also trigger the flicker
-  document.querySelector('.acts').addEventListener('click',e=>{ if(e.target.closest('button')) flicker(); /* disabled buttons never fire click, and the reroll handlers disable themselves before this runs */ });
+  document.querySelector('.acts').addEventListener('click',e=>{ if(e.target.closest('button')) flicker(true); /* disabled buttons never fire click, and the reroll handlers disable themselves before this runs */ });
 
   count=0; setCount(10); markFaces(); markCrit(); markSize(); renderHistory(); fit();
   if(!skipNext()) openGuide(0);
