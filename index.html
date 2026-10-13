@@ -86,12 +86,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .crit-n{margin-left:12px;color:var(--seal-hi);text-shadow:0 0 12px var(--glow)}
 .crit-n b{font-size:calc(var(--big) * .74)}
 .right.idle .crit-n{display:none}
-.critrow{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:-2px}
-.seg{display:flex;border:1px solid var(--phos-dim)}
-.seg button{background:transparent;border:0;border-left:1px solid var(--phos-dim);color:var(--muted);font:600 11px/1 var(--term);letter-spacing:.08em;height:28px;min-width:44px;padding:0 10px;transition:background .15s,color .15s}
-.seg button:first-child{border-left:0}
-.seg button:hover{color:var(--ink);background:var(--brass-soft)}
-.seg button[aria-pressed="true"]{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 60%,var(--phos-deep));color:var(--phos-ink);box-shadow:0 0 12px var(--glow)}
+.critrow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:center;justify-items:center;margin-top:-4px}
+.critrow .k-lbl{font-size:9.5px;letter-spacing:.1em}
+.critrow .k-lbl::before{content:none}
+.chk{width:22px;height:22px;padding:0;border:1px solid var(--phos-dim);background:transparent;display:grid;place-items:center;transition:background .15s,border-color .15s,box-shadow .15s}
+.chk svg{width:14px;height:14px;opacity:0}
+.chk:hover{border-color:var(--brass);background:var(--brass-soft)}
+.chk[aria-checked="true"]{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 60%,var(--phos-deep));border-color:var(--seal-hi);box-shadow:0 0 10px var(--glow)}
+.chk[aria-checked="true"] svg{opacity:1}
 @keyframes tick{0%{opacity:.15}20%{opacity:1}40%{opacity:.45}60%{opacity:1}80%{opacity:.7}100%{opacity:1}}
 
 /* bracketed panel, as in the Codex */
@@ -271,7 +273,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     </div>
     <div class="hint">Tap a target to roll · hits on it or higher</div>
     <div class="faces" id="faces"></div>
-    <div class="critrow"><span class="k-lbl">Crit on</span><div class="seg" id="critSeg" role="group" aria-label="Critical hit threshold"></div></div>
+    <div class="critrow" id="critSeg" role="radiogroup" aria-label="Critical hits on"><span class="k-lbl">Crit</span></div>
   </div>
 </main>
 
@@ -529,10 +531,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   // crit threshold: one choice, 2+ to 6+; changing it re-reads the dice already in the tray
   for(let v=2;v<=6;v++){
-    const b=document.createElement('button'); b.textContent=v+'+'; b.setAttribute('aria-label','Critical hits on '+v+' or higher');
+    const b=document.createElement('button'); b.className='chk'; b.setAttribute('role','radio'); b.setAttribute('aria-label','Critical hits on '+v+' or higher');
+    b.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></svg>'; b.style.color='var(--phos-ink)';
     b.onclick=()=>setCrit(v); $('critSeg').appendChild(b);
   }
-  function markCrit(){[...$('critSeg').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i+2===crit)));}
+  function markCrit(){$('critSeg').querySelectorAll('.chk').forEach((b,i)=>b.setAttribute('aria-checked',String(i+2===crit)));}
   function setCrit(v){
     if(busy||v===crit) return; crit=v; markCrit();
     if(!rolls.length||!target) return;
