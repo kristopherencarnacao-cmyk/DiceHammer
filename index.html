@@ -147,6 +147,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bar{display:flex;flex-direction:column;gap:10px;padding-bottom:env(safe-area-inset-bottom,0px)}
 .acts{display:flex;gap:6px}
 .acts .btn{flex:1 1 0;min-width:0;height:40px;padding-inline:4px}
+.hint{margin-bottom:-4px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center}
+.hint::before{content:"> ";color:var(--brass)}
 .faces{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .face{border:0;background:transparent;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px}
 .die{width:100%;max-width:54px;aspect-ratio:1;border-radius:12%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6%;padding:18%;box-sizing:border-box;transition:transform .1s,box-shadow .15s}
@@ -227,11 +229,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   <div class="bar">
     <div class="acts">
-      <button class="btn primary" id="again" disabled>Roll again</button>
       <button class="btn" id="rerollOnes" disabled>Re-roll 1s</button>
       <button class="btn" id="rerollFails" disabled>Re-roll fails</button>
       <button class="btn" id="removeFails" disabled>Remove fails</button>
     </div>
+    <div class="hint">Tap a target number to roll the pool · hits on that or higher</div>
     <div class="faces" id="faces"></div>
   </div>
 </main>
@@ -296,7 +298,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     $('res').classList.add('idle');
     $('hits').innerHTML=target?'Tap a target<br>to roll':'Pick a target<br>to roll';
     $('sub').textContent='';
-    $('again').disabled=!target||!count; $('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
+    $('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
   }
   // dice fill the tray in reading order; slots maps each die to its cell
   const lineSlots=n=>Array.from({length:n},(_,k)=>k);
@@ -340,7 +342,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       if((t+=60)>=620){clearInterval(timer); timer=null; idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
     },60);
   }
-  function lock(){$('again').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
+  function lock(){$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
   function roll(){
     if(busy||!count||!target) return; busy=true; action='Rolled';
     cells.forEach(c=>c.classList.remove('drop'));
@@ -373,7 +375,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
   function syncButtons(hits){
     const n=rolls.length;
-    $('again').disabled=!n||!target; $('rerollFails').disabled=!n||hits===n;
+    $('rerollFails').disabled=!n||hits===n;
     $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n;
   }
   // newly added dice materialise in their slot showing a random resting face
@@ -398,7 +400,6 @@ button{font:inherit;color:inherit;cursor:pointer}
     syncButtons(hits); busy=false;
     record(action);
   }
-  $('again').onclick=roll;
   $('rerollFails').onclick=()=>rerollWhere(v=>!isHit(v),'Re-rolled fails');
   $('rerollOnes').onclick=()=>rerollWhere(v=>v===1,'Re-rolled 1s');
 
@@ -415,7 +416,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       $('sub').textContent=(count===1?'die':'dice')+' left in pool';
       record('Removed fails');
     }else{
-      grid.classList.remove('rolled'); $('again').disabled=true;
+      grid.classList.remove('rolled');
       $('res').classList.add('idle'); $('hits').innerHTML='No dice left'; $('sub').textContent='Drag to pick a new pool';
     }
   }
