@@ -55,18 +55,21 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hist .n{color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* readout */
-.readout{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;min-height:58px}
-.left{display:flex;align-items:flex-end;gap:8px}
+/* fixed rows (label / number / status line) so nothing moves between idle, rolling and result states */
+.readout{--big:38px;--lbl:12px;--subh:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:none}
+.readout .k-lbl{height:var(--lbl);line-height:var(--lbl);white-space:nowrap}
+.left{display:flex;align-items:flex-end;gap:8px;padding-bottom:calc(var(--subh) + 3px)}
 .step{width:34px;height:34px;font-size:18px;font-weight:700;padding:0}
 .pool{display:flex;flex-direction:column;gap:3px}
-.big{font-weight:700;font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.big{font-weight:700;font-size:var(--big,38px);height:var(--big,38px);line-height:var(--big,38px);font-variant-numeric:tabular-nums;white-space:nowrap}
+#count .n{display:inline-block;min-width:2ch;text-align:right}
 .big small{font-size:13px;font-weight:600;color:var(--muted);margin-left:4px;letter-spacing:.1em}
 #count{color:var(--ink)}
 .right{flex:1;min-width:0;text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
 #hits{color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(85,230,165,.8)}
-.right .sub{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.right .sub{height:var(--subh);line-height:var(--subh);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .right .sub:not(:empty)::before{content:"> ";color:var(--brass)}
-.right.idle #hits{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-shadow:none;line-height:1.45}
+.right.idle #hits{color:var(--muted);text-shadow:none}
 #hits.tick{animation:tick .4s steps(5) both}
 @keyframes tick{0%{opacity:.15}20%{opacity:1}40%{opacity:.45}60%{opacity:1}80%{opacity:.7}100%{opacity:1}}
 
@@ -192,7 +195,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 .h-empty{color:var(--muted);font-size:12px;letter-spacing:.04em;text-align:center;padding:28px 16px}
 .h-empty::before{content:"> ";color:var(--brass)}
 
-@media (max-height:620px){.big{font-size:30px}.readout{min-height:48px}.die{max-width:42px}}
+/* curved CRT glass, as in Dominatus Codex: rounded bezel corners, barrel shading and a glass highlight (visual only, never blocks input) */
+.crt-glass{position:fixed;inset:0;pointer-events:none;z-index:10000;border-radius:clamp(18px,4vw,42px)/clamp(24px,5vw,56px);
+  box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 26px 6px rgba(0,0,0,.85),inset 0 0 120px 20px rgba(0,0,0,.45)}
+.crt-glass .crt-bulge{position:absolute;inset:0;border-radius:inherit;
+  background:radial-gradient(ellipse 140% 120% at 50% 50%,transparent 58%,rgba(0,0,0,.28) 78%,rgba(0,0,0,.6) 100%),radial-gradient(ellipse 90% 70% at 50% 45%,rgba(85,230,165,.035),transparent 70%)}
+.crt-glass .crt-glare{position:absolute;inset:0;border-radius:inherit;
+  background:radial-gradient(ellipse 55% 30% at 28% 10%,rgba(220,240,255,.07),transparent 70%),linear-gradient(115deg,transparent 62%,rgba(220,240,255,.025) 70%,transparent 78%)}
+@media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
+/* a little more room so nothing tucks under the curved rim */
+.app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
+@media (max-height:620px){.big{font-size:30px}.readout{--big:30px}.die{max-width:42px}}
 @media (prefers-reduced-motion: reduce){
   body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
   .spark,.tw{display:none}.cell.six::after{animation:none;opacity:.8}
@@ -212,14 +225,14 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="btn step" id="minus" aria-label="One fewer die">−</button>
       <div class="pool">
         <div class="k-lbl">Pool</div>
-        <div class="big" id="count">10<small>D6</small></div>
+        <div class="big" id="count"><span class="n">10</span><small>D6</small></div>
       </div>
       <button class="btn step" id="plus" aria-label="One more die">+</button>
     </div>
     <div class="right idle" id="res" aria-live="polite">
       <div class="k-lbl">Result</div>
-      <div class="big" id="hits">Awaiting roll</div>
-      <div class="sub" id="sub"></div>
+      <div class="big" id="hits">--</div>
+      <div class="sub" id="sub">Tap a target to roll</div>
     </div>
   </div>
 
@@ -234,11 +247,12 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="btn" id="rerollFails" disabled>Re-roll fails</button>
       <button class="btn" id="removeFails" disabled>Remove fails</button>
     </div>
-    <div class="hint">Tap a target number to roll the pool · hits on that or higher</div>
+    <div class="hint">Tap a target to roll · hits on that or higher</div>
     <div class="faces" id="faces"></div>
   </div>
 </main>
 
+<div class="crt-glass" aria-hidden="true"><i class="crt-bulge"></i><i class="crt-glare"></i></div>
 <div class="scrim" id="scrim" hidden></div>
 <section class="sheet frame" id="sheet" hidden aria-label="Roll log">
   <div class="sheet-head">
@@ -297,8 +311,8 @@ button{font:inherit;color:inherit;cursor:pointer}
     rolls=[]; grid.classList.remove('rolled');
     cells.forEach(c=>{c.classList.remove('hit','miss','spin','land'); clearFx(c);});
     $('res').classList.add('idle');
-    $('hits').innerHTML=target?'Tap a target<br>to roll':'Pick a target<br>to roll';
-    $('sub').textContent='';
+    $('hits').textContent='--';
+    $('sub').textContent='Tap a target to roll';
     $('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
   }
   // dice fill the tray in reading order; slots maps each die to its cell
@@ -391,7 +405,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       if(!now) c.classList.remove('drop');
       c.classList.toggle('on',now);
     });
-    $('count').innerHTML=count+'<small>D6</small>';
+    $('count').innerHTML='<span class="n">'+count+'</span><small>D6</small>';
   }
   function finish(){
     const idx=fresh||new Set(rolls.map((_,i)=>i)); fresh=null;
@@ -418,7 +432,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       record('Removed fails');
     }else{
       grid.classList.remove('rolled');
-      $('res').classList.add('idle'); $('hits').innerHTML='No dice left'; $('sub').textContent='Drag to pick a new pool';
+      $('res').classList.add('idle'); $('hits').textContent='0'; $('sub').textContent='No dice left · drag to pick a new pool';
     }
   }
   $('removeFails').onclick=removeFails;
