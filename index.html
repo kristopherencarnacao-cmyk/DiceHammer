@@ -202,8 +202,25 @@ body.size-l .readout{--big:28px}
 .die{width:100%;max-width:54px;aspect-ratio:1;border-radius:12%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6%;padding:18%;box-sizing:border-box;transition:transform .1s,box-shadow .15s}
 .die i{border-radius:50%;visibility:hidden}
 .face:hover .die{box-shadow:inset 0 0 0 1px var(--brass),0 0 10px var(--glow-soft),0 3px 6px var(--deep-shadow)}
-.face:active .die{transform:scale(.92)}
+.face:active .die{transform:translateY(1px)}
 .face span{font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--muted)}
+/* target dice as keys: the die rises off a fixed base outline and presses back down, in a shuffled order */
+.key{position:relative;width:100%;max-width:54px;aspect-ratio:1}
+.key::before{content:"";position:absolute;inset:0;border-radius:12%;border:1px solid var(--phos-dim);border-top-color:transparent;
+  background:linear-gradient(180deg,transparent 40%,rgba(85,230,165,.10)),var(--ash);box-shadow:0 2px 0 rgba(0,0,0,.5)}
+.key .die{position:relative;max-width:none;animation:keyBob 3.6s infinite;animation-delay:var(--kd,0s)}
+@keyframes keyBob{
+  0%,56%,100%{transform:translateY(0)}
+  64%{transform:translateY(-6px);animation-timing-function:ease-out}
+  78%{transform:translateY(-6px);animation-timing-function:cubic-bezier(.6,0,.9,.4)}
+  84%{transform:translateY(1px)}
+  90%{transform:translateY(0)}
+}
+.faces.has-sel .face:not(.sel) .die{animation:none}
+.face:active .key .die{animation:none;transform:translateY(1px)}
+.face.sel .key::before{border-color:var(--brass);border-top-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.5),0 4px 12px var(--glow-soft)}
+@media (max-height:620px){.key{max-width:42px}}
+@media (prefers-reduced-motion:reduce){.key .die{animation:none}}
 .face.sel .die{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 60%,var(--phos-deep));box-shadow:inset 0 0 0 1px var(--seal-hi),0 0 14px var(--glow)}
 .face.sel .die i{background:var(--phos-ink);box-shadow:none}
 .face.sel span{color:var(--brass);text-shadow:0 0 8px var(--glow)}
@@ -528,12 +545,14 @@ body.flicker .app{animation:crtFlicker .7s steps(1) both}
   // target faces
   for(let v=1;v<=6;v++){
     const b=document.createElement('button'); b.className='face'; b.setAttribute('aria-label','Roll, succeed on '+v+' or higher');
-    b.innerHTML='<div class="die">'+'<i></i>'.repeat(9)+'</div><span>'+v+'+</span>';
+    b.innerHTML='<div class="key"><div class="die">'+'<i></i>'.repeat(9)+'</div></div><span>'+v+'+</span>';
     setPips(b.querySelector('.die'),v);
     b.onclick=()=>{target=v; markFaces(); roll();};
     facesEl.appendChild(b);
   }
-  function markFaces(){[...facesEl.children].forEach((b,i)=>b.classList.toggle('sel',i+1===target));}
+  function markFaces(){[...facesEl.children].forEach((b,i)=>b.classList.toggle('sel',i+1===target)); facesEl.classList.toggle('has-sel',!!target);}
+  // keys bob in a shuffled order (not left to right), reshuffled on each load
+  (()=>{const order=[0,1,2,3,4,5].sort(()=>Math.random()-.5); [...facesEl.children].forEach((b,i)=>b.querySelector('.die').style.setProperty('--kd',(order.indexOf(i)*0.55).toFixed(2)+'s'));})();
 
   // rolling happens in the tray cells themselves
   function animate(idx,done){
