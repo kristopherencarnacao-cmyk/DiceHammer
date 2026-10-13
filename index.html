@@ -84,12 +84,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .left{padding-bottom:0}
 .right{padding-bottom:0}
 .right .sub:not(:empty)::before{content:"> ";color:var(--brass)}
-.right.idle #hits{color:var(--muted);text-shadow:none}
-#hits.tick,#crits.tick{animation:tick .4s steps(5) both}
-.res-big small{margin-right:2px}
-.crit-n{margin-left:12px;color:var(--seal-hi);text-shadow:0 0 12px var(--glow)}
-.crit-n b{font-size:calc(var(--big) * .74)}
-.right.idle .crit-n{display:none}
+/* results: hits / crit / fail, each a label over a number */
+.stats{display:flex;gap:16px;justify-content:flex-end}
+.stat{display:flex;flex-direction:column;gap:3px;align-items:flex-end;min-width:2ch}
+.stat .k-lbl::before{content:none}
+.stat .big{min-width:2ch;text-align:right}
+#crits{color:var(--seal-hi);text-shadow:0 0 12px var(--glow)}
+#fails{color:var(--muted)}
+.right.idle .stat .big{color:var(--muted);text-shadow:none;opacity:.6}
+#hits.tick,#crits.tick,#fails.tick{animation:tick .4s steps(5) both}
 .critrow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:center;justify-items:center;margin-top:-4px}
 .critrow .k-lbl{font-size:9.5px;letter-spacing:.1em}
 .critrow .k-lbl::before{content:none}
@@ -232,7 +235,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
-@media (max-width:380px){.readout{--big:32px}.crit-n{margin-left:8px}}
+@media (max-width:380px){.readout{--big:32px}.stats{gap:12px}}
 @media (max-height:620px){.big{font-size:30px}.readout{--big:30px}.die{max-width:42px}}
 @media (prefers-reduced-motion: reduce){
   body::before,.cursor,.cell.spin,.cell.six,.cell.drop,.grid.rolled .cell.on.land,#hits.tick,.sheet:not([hidden]){animation:none!important}
@@ -258,8 +261,11 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="btn step" id="plus" aria-label="One more die">+</button>
     </div>
     <div class="right idle" id="res" aria-live="polite">
-      <div class="k-lbl">Result</div>
-      <div class="big res-big"><span id="hits">--</span><small>HITS</small><span class="crit-n"><b id="crits">0</b><small>CRIT</small></span></div>
+      <div class="stats">
+        <div class="stat"><div class="k-lbl">Hits</div><div class="big" id="hits">--</div></div>
+        <div class="stat"><div class="k-lbl">Crit</div><div class="big" id="crits">--</div></div>
+        <div class="stat"><div class="k-lbl">Fail</div><div class="big" id="fails">--</div></div>
+      </div>
       <div class="sub" id="sub">Tap a target to roll</div>
     </div>
   </div>
@@ -339,7 +345,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     c.innerHTML='<i></i>'.repeat(9)+SKULL;
     grid.appendChild(c); cells.push(c);
   }
-  function tick(){['hits','crits'].forEach(id=>{const h=$(id); h.classList.remove('tick'); void h.offsetWidth; if(!reduce) h.classList.add('tick');});}
+  function tick(){['hits','crits','fails'].forEach(id=>{const h=$(id); h.classList.remove('tick'); void h.offsetWidth; if(!reduce) h.classList.add('tick');});}
   const subText=(hits,n)=>target+'+ hit · '+crit+'+ crit · avg '+(n*(7-Math.min(target,crit))/6).toFixed(1);
 
   function clearRoll(){
@@ -347,7 +353,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     rolls=[]; grid.classList.remove('rolled');
     cells.forEach(c=>{c.classList.remove('hit','miss','spin','land'); clearFx(c);});
     $('res').classList.add('idle');
-    $('hits').textContent='--'; $('crits').textContent='0';
+    $('hits').textContent=$('crits').textContent=$('fails').textContent='--';
     $('sub').textContent='Tap a target to roll';
     $('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
   }
@@ -401,7 +407,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     grid.classList.add('rolled');
     cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
     rolls.forEach((v,i)=>setPips(cells[slots[i]],v));
-    $('res').classList.remove('idle'); $('hits').textContent='--'; $('crits').textContent='--'; $('sub').textContent='Rolling';
+    $('res').classList.remove('idle'); $('hits').textContent=$('crits').textContent=$('fails').textContent='--'; $('sub').textContent='Rolling';
     lock(); animate(rolls.map((_,i)=>i),finish);
   }
   function rerollWhere(test,label){
@@ -446,7 +452,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   function finish(){
     const idx=fresh||new Set(rolls.map((_,i)=>i)); fresh=null;
     const {hits,crits}=paintResult(idx), n=rolls.length;
-    $('hits').textContent=hits; $('crits').textContent=crits; tick();
+    $('hits').textContent=hits; $('crits').textContent=crits; $('fails').textContent=n-hits; tick();
     $('sub').textContent=subText(hits,n);
     syncButtons(hits); busy=false;
     record(action);
@@ -463,7 +469,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); const {crits}=paintResult(null); syncButtons(count);
     if(count){
-      $('hits').textContent=count; $('crits').textContent=crits; tick();
+      $('hits').textContent=count; $('crits').textContent=crits; $('fails').textContent=0; tick();
       $('sub').textContent=(count===1?'die':'dice')+' left in pool';
       record('Removed fails');
     }else{
@@ -491,7 +497,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   function save(){try{sessionStorage.setItem('d6-tray-history',JSON.stringify(history));}catch(_){}}
   function record(label){
     const id=(history.length?history[history.length-1].id:0)+1;
-    history.push({id,t:Date.now(),label,target,rolls:rolls.slice(),crit,critsText:$('crits').textContent,hitsText:$('hits').textContent,sub:$('sub').textContent});
+    history.push({id,t:Date.now(),label,target,rolls:rolls.slice(),crit,critsText:$('crits').textContent,failsText:$('fails').textContent,hitsText:$('hits').textContent,sub:$('sub').textContent});
     if(history.length>200) history.shift();
     curId=id; save(); renderHistory();
   }
@@ -502,7 +508,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
     const {hits,crits}=paintResult(null);
-    $('hits').textContent=e.hitsText; $('crits').textContent=e.critsText!=null?e.critsText:crits; tick(); $('sub').textContent=e.sub;
+    $('hits').textContent=e.hitsText; $('crits').textContent=e.critsText!=null?e.critsText:crits; $('fails').textContent=e.failsText!=null?e.failsText:rolls.length-hits; tick(); $('sub').textContent=e.sub;
     syncButtons(hits); curId=id; renderHistory(); closeSheet();
   }
   const fmtTime=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
@@ -513,10 +519,11 @@ button{font:inherit;color:inherit;cursor:pointer}
     list.innerHTML=history.slice().reverse().map(e=>{
       const ec=e.crit||6, strip=e.rolls.map(v=>'<i class="'+(v>=ec?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
       const nc=e.critsText!=null?e.critsText:e.rolls.filter(v=>v>=ec).length;
+      const nf=e.failsText!=null?e.failsText:e.rolls.filter(v=>v<e.target&&v<ec).length;
       return '<li><button class="h-item'+(e.id===curId?' cur':'')+'" data-id="'+e.id+'">'+
         '<span class="h-dot"></span>'+
         '<span class="h-hits">'+e.hitsText+'</span>'+
-        '<span class="h-mid"><span class="h-title">'+e.label+' · '+e.rolls.length+'D6 · '+e.target+'+ · '+nc+' crit'+(ec!==6?' ('+ec+'+)':'')+'</span><span class="strip">'+strip+'</span></span>'+
+        '<span class="h-mid"><span class="h-title">'+e.label+' · '+e.rolls.length+'D6 · '+e.target+'+ · '+nc+' crit'+(ec!==6?' ('+ec+'+)':'')+' · '+nf+' fail</span><span class="strip">'+strip+'</span></span>'+
         '<span class="h-time">'+(e.id===curId?'NOW':fmtTime(e.t))+'</span></button></li>';
     }).join('');
   }
@@ -546,12 +553,12 @@ button{font:inherit;color:inherit;cursor:pointer}
     cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
     const {hits,crits}=paintResult(null);
     if(!$('res').classList.contains('idle')){
-      $('hits').textContent=hits; $('crits').textContent=crits; tick();
+      $('hits').textContent=hits; $('crits').textContent=crits; $('fails').textContent=rolls.length-hits; tick();
       $('sub').textContent=subText(hits,rolls.length);
     }
     syncButtons(hits);
     const e=history.find(x=>x.id===curId);
-    if(e){e.crit=crit; e.critsText=String(crits); e.hitsText=$('hits').textContent; e.sub=$('sub').textContent; save(); renderHistory();}
+    if(e){e.crit=crit; e.critsText=String(crits); e.failsText=$('fails').textContent; e.hitsText=$('hits').textContent; e.sub=$('sub').textContent; save(); renderHistory();}
   }
 
   count=0; setCount(10); markFaces(); markCrit(); renderHistory(); fit();
