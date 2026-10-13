@@ -195,6 +195,17 @@ body.size-l .readout{--big:28px}
 .bar{display:flex;flex-direction:column;gap:10px;padding-bottom:env(safe-area-inset-bottom,0px)}
 .acts{display:flex;gap:6px}
 .acts .btn{flex:1 1 0;min-width:0;height:40px;padding-inline:4px}
+/* crit tools: Lock crits toggle and Dupe crits, in gold to match the crit total */
+.acts-crit .btn{height:34px;border-color:rgba(245,196,81,.35);color:var(--gold)}
+.acts-crit .btn:hover:not(:disabled){background:rgba(245,196,81,.08);border-color:var(--gold);box-shadow:0 0 12px var(--gold-glow)}
+.tog b{font-weight:700;margin-left:4px;opacity:.75}
+.tog[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1200;box-shadow:0 0 12px var(--gold-glow)}
+.tog[aria-pressed="true"]:hover:not(:disabled){background:#ffd977;color:#1a1200}
+.tog[aria-pressed="true"] b{opacity:1}
+/* locked crits carry a gold frame; duped dice carry a small gold + */
+.grid.rolled .cell.on.locked{outline:1.5px solid var(--gold);outline-offset:1px}
+.cell.dupe::before{content:"+";position:absolute;top:0;right:12%;font:700 clamp(8px,1.6vw,11px)/1.2 var(--term);color:var(--gold);text-shadow:0 0 4px var(--gold-glow);z-index:2}
+.grid.rolled .cell.on.dupe{box-shadow:inset 0 0 0 1px var(--gold),inset -2px -3px 6px rgba(0,0,0,.45)!important}
 .hint{margin-bottom:-4px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center}
 .hint::before{content:"> ";color:var(--brass)}
 .faces{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
@@ -427,6 +438,10 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   </div>
 
   <div class="bar">
+    <div class="acts acts-crit">
+      <button class="btn tog" id="lockBtn" aria-pressed="false">Lock crits <b id="lockState">Off</b></button>
+      <button class="btn" id="dupeBtn" disabled>Dupe crits</button>
+    </div>
     <div class="acts">
       <button class="btn" id="sortBtn" disabled>Sort</button>
       <button class="btn" id="rerollOnes" disabled>Re-roll 1s</button>
@@ -462,7 +477,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   let lastTouch=0;
   document.addEventListener('touchend',e=>{const t=Date.now(); if(t-lastTouch<350){e.preventDefault(); if(e.target.closest('button')) e.target.closest('button').click();} lastTouch=t;},{passive:false});
   document.addEventListener('dblclick',e=>e.preventDefault());
-  let count=10, target=null, rolls=[], busy=false, timer=null, fresh=null, action='Rolled', slots=[], crit=6;
+  let count=10, target=null, rolls=[], busy=false, timer=null, fresh=null, action='Rolled', slots=[], crit=6, lockCrits=false, duped=0; // duped = how many crits have already been duped this roll
 
   const setPips=(el,v)=>{const on=PIPS[v]; el.querySelectorAll('i').forEach((p,i)=>p.classList.toggle('s',on.includes(i)));};
   // Rejection sampling: discard the top 4 values of the 32-bit range so all six faces are exactly equally likely
@@ -470,9 +485,11 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   const buf=new Uint32Array(1);
   const d6=()=>{do{crypto.getRandomValues(buf);}while(buf[0]>=LIMIT); return 1+(buf[0]%6);};
   // crits are hits at or above the crit threshold, and always count as successes
-  const isCrit=v=>v>=crit;
+  // duped dice (from Dupe crits) are stored as 10+face: they always count as normal hits, never crits, fails or 1s
+  const isDupe=v=>v>10, face=v=>v>10?v-10:v;
+  const isCrit=v=>!isDupe(v)&&v>=crit;
   // an unmodified 1 always fails, whatever the target
-  const isHit=v=>v!==1&&(v>=target||isCrit(v));
+  const isHit=v=>isDupe(v)||(v!==1&&(v>=target||isCrit(v)));
 
   // square tray sized to the space available
   function fit(){const s=Math.floor(Math.min(stage.clientWidth,stage.clientHeight)); grid.style.width=grid.style.height=s+'px';}
@@ -519,7 +536,8 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     $('res').classList.add('idle');
     $('hits').textContent=$('crits').textContent=$('fails').textContent='--';
     $('sub').textContent='Tap a target to roll';
-    $('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;
+    $('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=$('dupeBtn').disabled=true;
+    duped=0;
   }
   // dice fill the tray in reading order; slots maps each die to its cell
   const lineSlots=n=>Array.from({length:n},(_,k)=>k);
@@ -569,16 +587,20 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
       if((t+=step)>=620){clearInterval(timer); timer=null; grid.classList.remove('glitching'); idx.forEach(i=>cells[slots[i]].classList.remove('spin')); done();}
     },step);
   }
-  function lock(){$('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=true;}
+  function lock(){$('sortBtn').disabled=$('rerollFails').disabled=$('rerollOnes').disabled=$('removeFails').disabled=$('dupeBtn').disabled=true;}
   function roll(){
-    if(busy||!count||!target) return; busy=true; action='Rolled';
+    if(busy||!count||!target) return; busy=true;
+    // with Lock crits on, dice that are crits stay exactly as they are; everything else (duped dice included) rolls fresh
+    const keep=lockCrits&&rolls.length===count?rolls.map(isCrit):null;
+    action=keep&&keep.some(Boolean)?'Rolled (crits locked)':'Rolled';
     cells.forEach(c=>c.classList.remove('drop'));
-    rolls=Array.from({length:count},d6);
+    rolls=Array.from({length:count},(_,i)=>keep&&keep[i]?rolls[i]:d6());
+    duped=0;
     grid.classList.add('rolled');
-    cells.forEach(c=>{c.classList.remove('hit','miss','land'); clearFx(c);});
-    rolls.forEach((v,i)=>setPips(cells[slots[i]],v));
+    const idx=rolls.map((_,i)=>i).filter(i=>!(keep&&keep[i]));
+    idx.forEach(i=>{const c=cells[slots[i]]; c.classList.remove('hit','miss','land','dupe','locked'); clearFx(c); setPips(c,face(rolls[i]));});
     $('res').classList.remove('idle'); $('hits').textContent=$('crits').textContent=$('fails').textContent='--'; $('sub').textContent='Rolling';
-    lock(); animate(rolls.map((_,i)=>i),finish);
+    lock(); fresh=new Set(idx); animate(idx,finish);
   }
   function rerollWhere(test,label){
     if(busy||!rolls.length) return;
@@ -592,7 +614,8 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   function paintResult(animIdx){
     let hits=0, crits=0, sixNo=0; const landing=[], bursts=[];
     rolls.forEach((v,i)=>{
-      const c=cells[slots[i]]; setPips(c,v); const h=isHit(v); if(h) hits++; if(isCrit(v)) crits++;
+      const c=cells[slots[i]]; setPips(c,face(v)); const h=isHit(v); if(h) hits++; if(isCrit(v)) crits++;
+      c.classList.toggle('dupe',isDupe(v)); c.classList.toggle('locked',lockCrits&&isCrit(v));
       c.classList.toggle('hit',h); c.classList.toggle('miss',!h); c.classList.toggle('one',v===1);
       const isNew=!!animIdx&&animIdx.has(i);
       if(isNew){ c.classList.remove('land'); landing.push(c); }
@@ -610,6 +633,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     const n=rolls.length;
     $('rerollFails').disabled=!n||hits===n;
     $('rerollOnes').disabled=!rolls.includes(1); $('removeFails').disabled=!n||hits===n; $('sortBtn').disabled=n<2;
+    $('dupeBtn').disabled=!n||rolls.filter(isCrit).length<=duped||count>=N*N;
   }
   // newly added dice materialise in their slot showing a random resting face
   function showCount(){
@@ -660,7 +684,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   // reorder the tray highest to lowest; same dice, so the result and log entry stay the same
   function sortDice(){
     if(busy||rolls.length<2) return;
-    rolls.sort((a,b)=>b-a);
+    rolls.sort((a,b)=>face(b)-face(a)||isDupe(a)-isDupe(b));
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     paintResult(null);
     if(!reduce){ void grid.offsetWidth; rolls.forEach((v,i)=>cells[slots[i]].classList.add('land')); }
@@ -668,6 +692,29 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     if(e&&e.rolls.length===rolls.length){e.rolls=rolls.slice(); save(); renderHistory();}
   }
   $('sortBtn').onclick=sortDice;
+
+  // Lock crits: while on, crits survive a full re-roll of the tray (and are never fails, so Re-roll/Remove fails leave them alone)
+  $('lockBtn').onclick=()=>{
+    lockCrits=!lockCrits;
+    $('lockBtn').setAttribute('aria-pressed',String(lockCrits)); $('lockState').textContent=lockCrits?'On':'Off';
+    rolls.forEach((v,i)=>cells[slots[i]].classList.toggle('locked',lockCrits&&isCrit(v)));
+  };
+  // Dupe crits: add one guaranteed normal hit for every crit in the tray that hasn't been duped yet
+  // (so crits that appear after Re-roll fails / Re-roll 1s can be duped too)
+  function dupeCrits(){
+    if(busy||!rolls.length) return;
+    const k=rolls.filter(isCrit).length-duped, add=Math.min(k,N*N-count);
+    if(!add) return;
+    const f=Math.max(2,Math.min(6,target)), start=count;
+    for(let j=0;j<add;j++) rolls.push(10+f);
+    count+=add; slots=lineSlots(count); showCount();
+    const {hits,crits}=paintResult(new Set(Array.from({length:add},(_,j)=>start+j)));
+    $('hits').textContent=hits-crits; $('crits').textContent=crits; $('fails').textContent=rolls.length-hits; tick();
+    $('sub').textContent=subText(hits,rolls.length);
+    duped+=add; syncButtons(hits);
+    record('Duped crits (+'+add+(add<k?', tray full':'')+')');
+  }
+  $('dupeBtn').onclick=dupeCrits;
 
   // ---- session log ----
   let history=[], curId=null;
@@ -683,7 +730,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     const e=history.find(x=>x.id===id); if(!e||busy) return;
     target=e.target; markFaces(); crit=e.crit||6; markCrit();
     if(e.rolls.length>N*N) setSize(Object.keys(SIZES).find(k=>SIZES[k]*SIZES[k]>=e.rolls.length)||'l',true);
-    rolls=e.rolls.slice(0,N*N); count=rolls.length; slots=lineSlots(count);
+    rolls=e.rolls.slice(0,N*N); count=rolls.length; slots=lineSlots(count); duped=rolls.filter(isDupe).length;
     cells.forEach(c=>{c.classList.remove('hit','miss','land','spin'); clearFx(c);});
     showCount(); grid.classList.add('rolled'); $('res').classList.remove('idle');
     const {hits,crits}=paintResult(null);
@@ -696,9 +743,9 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     const list=$('histList');
     if(!history.length){list.innerHTML='<li class="h-empty">No rolls logged. Every roll this session lands here; tap one to restore it.</li>'; return;}
     list.innerHTML=history.slice().reverse().map(e=>{
-      const ec=e.crit||6, strip=e.rolls.map(v=>'<i class="'+(v>=ec?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
-      const nc=e.critsText!=null?e.critsText:e.rolls.filter(v=>v>=ec).length;
-      const nf=e.failsText!=null?e.failsText:e.rolls.filter(v=>v===1||(v<e.target&&v<ec)).length;
+      const ec=e.crit||6, strip=e.rolls.map(v=>'<i class="'+(v>10?'h':v>=ec?'s6':v===1?'s1':v>=e.target?'h':'')+'"></i>').join('');
+      const nc=e.critsText!=null?e.critsText:e.rolls.filter(v=>v<=6&&v>=ec).length;
+      const nf=e.failsText!=null?e.failsText:e.rolls.filter(v=>v<=6&&(v===1||(v<e.target&&v<ec))).length;
       return '<li><button class="h-item'+(e.id===curId?' cur':'')+'" data-id="'+e.id+'">'+
         '<span class="h-dot"></span>'+
         '<span class="h-hits">'+e.hitsText+'</span>'+
@@ -818,7 +865,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   function flicker(fast){ if(reduce||document.hidden) return; const b=document.body; clearTimeout(flickT); b.classList.remove('flicker','fast'); void b.offsetWidth; b.classList.toggle('fast',!!fast); b.classList.add('flicker'); flickT=setTimeout(()=>b.classList.remove('flicker','fast'),fast?400:750); }
   (function schedule(){ setTimeout(()=>{ flicker(); schedule(); }, 45000+Math.random()*30000); })();
   // the action buttons above the dice (Sort, Re-roll 1s, Re-roll fails, Remove fails) also trigger the flicker
-  document.querySelector('.acts').addEventListener('click',e=>{ if(e.target.closest('button')) flicker(true); /* disabled buttons never fire click, and the reroll handlers disable themselves before this runs */ });
+  document.querySelectorAll('.acts').forEach(r=>r.addEventListener('click',e=>{ if(e.target.closest('button')) flicker(true); /* disabled buttons never fire click, and the reroll handlers disable themselves before this runs */ }));
 
   count=0; setCount(10); markFaces(); markCrit(); markSize(); renderHistory(); fit();
   if(!skipNext()) openGuide(0);
