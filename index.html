@@ -306,6 +306,11 @@ body.size-l .readout{--big:28px}
   background:radial-gradient(ellipse 140% 120% at 50% 50%,transparent 58%,rgba(0,0,0,.28) 78%,rgba(0,0,0,.6) 100%),radial-gradient(ellipse 90% 70% at 50% 45%,rgba(var(--rgb),.035),transparent 70%)}
 .crt-glass .crt-glare{position:absolute;inset:0;border-radius:inherit;
   background:radial-gradient(ellipse 55% 30% at 28% 10%,rgba(220,240,255,.07),transparent 70%),linear-gradient(115deg,transparent 62%,rgba(220,240,255,.025) 70%,transparent 78%)}
+.crt-svg{display:none;position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.crt-svg .rim{fill:none;stroke:rgba(var(--rgb),.24);stroke-width:2}
+.crt-svg .rim-in{fill:none;stroke:rgba(var(--rgb),.07);stroke-width:1}
+.crt-svg .rim-out{fill:none;stroke:rgba(var(--rgb),.10);stroke-width:1}
+.crt-svg .shade{fill:none;stroke:#000}
 @media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(var(--rgb),.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
@@ -362,9 +367,10 @@ body.size-l .readout{--big:28px}
   .face span{font-size:13px}
   .chk{width:calc(24px + var(--u)*.25);height:calc(24px + var(--u)*.25)}
   .readout .step{flex:none}
-  /* CRT bubble: inset 16px from the browser edge with wide, oval corners like a curved tube */
-  .crt-glass{inset:16px;border-radius:7% / 10%;
-    box-shadow:0 0 0 200px #000,0 0 0 1px rgba(var(--rgb),.10),inset 0 0 0 2px rgba(var(--rgb),.22),inset 0 0 0 6px rgba(0,0,0,.9),inset 0 0 0 7px rgba(var(--rgb),.08),inset 0 0 40px 12px rgba(0,0,0,.9),inset 0 0 160px 30px rgba(0,0,0,.5),inset 0 0 60px rgba(var(--rgb),.06)}
+  /* CRT bubble: an SVG tube outline 16px in from the browser edge; every edge bows out slightly and flows into the corners */
+  .crt-glass{border-radius:0;box-shadow:none}
+  .crt-glass .crt-bulge,.crt-glass .crt-glare{border-radius:0;-webkit-clip-path:url(#crtClip);clip-path:url(#crtClip)}
+  .crt-svg{display:block}
 }
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (min-height:600px) and (min-width:1100px){.app{--side-min:420px}}
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-width:640px){.tog b{display:none}.acts-crit .btn{padding-inline:3px}}
@@ -558,7 +564,10 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
 </main>
 
 <div class="crt-band" aria-hidden="true"></div>
-<div class="crt-glass" aria-hidden="true"><i class="crt-bulge"></i><i class="crt-glare"></i></div>
+<div class="crt-glass" aria-hidden="true"><i class="crt-bulge"></i><i class="crt-glare"></i>
+<svg class="crt-svg" id="crtSvg" aria-hidden="true"><defs><clipPath id="crtClip"><path id="crtPath"/></clipPath><filter id="crtSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="22"/></filter><filter id="crtSoft2" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="6"/></filter></defs>
+<g clip-path="url(#crtClip)"><use href="#crtPath" class="shade" stroke-width="150" opacity=".55" filter="url(#crtSoft)"/><use href="#crtPath" class="shade" stroke-width="40" opacity=".9" filter="url(#crtSoft2)"/><path class="rim-in" id="crtInner"/></g>
+<path id="crtMask" fill="#000" fill-rule="evenodd"/><use href="#crtPath" class="rim"/><path class="rim-out" id="crtOuter"/></svg></div>
 <div class="scrim" id="scrim" hidden></div>
 <section class="guide frame" id="guide" hidden role="dialog" aria-modal="true" aria-labelledby="g-title" aria-describedby="g-body"></section>
 <section class="sheet frame" id="sheet" hidden aria-label="Roll log">
@@ -616,6 +625,38 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     const w=appEl.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-parseFloat(cs.columnGap||0)-(parseFloat(cs.getPropertyValue('--side-min'))||300);
     appEl.style.setProperty('--tray',Math.max(150,Math.floor(Math.min(h,w)))+'px');
   }
+  // large landscape: draw the CRT tube as one continuous curve (edges bow outward and blend into the corners)
+  const bigMQ=window.matchMedia('(orientation:landscape) and (min-aspect-ratio:13/10) and (min-height:600px) and (min-width:1000px)');
+  function tube(W,H,m){
+    const L=m,T=m,R=W-m,B=H-m,w=R-L,h=B-T;
+    const bt=w*.011,bs=h*.016,rx=w*.065,ry=h*.095,k=.56,f=n=>n.toFixed(1);
+    // ends of each bowed edge, and the tangent there (towards the corner)
+    const nrm=(x,y)=>{const l=Math.hypot(x,y);return [x/l,y/l]};
+    const tT=nrm(w/2-rx,-2*bt), tS=nrm(-2*bs,h/2-ry);
+    const pts={tl:[L+rx,T+bt],tr:[R-rx,T+bt],rt:[R-bs,T+ry],rb:[R-bs,B-ry],br:[R-rx,B-bt],bl:[L+rx,B-bt],lb:[L+bs,B-ry],lt:[L+bs,T+ry]};
+    const c=(p,dx,dy,len)=>f(p[0]+dx*len)+' '+f(p[1]+dy*len);
+    const P=p=>f(p[0])+' '+f(p[1]);
+    return 'M'+P(pts.tl)+
+      'Q'+f(L+w/2)+' '+f(T-bt)+' '+P(pts.tr)+
+      'C'+c(pts.tr,tT[0],-tT[1],k*rx)+' '+c(pts.rt,tS[0],-tS[1],k*ry)+' '+P(pts.rt)+
+      'Q'+f(R+bs)+' '+f(T+h/2)+' '+P(pts.rb)+
+      'C'+c(pts.rb,tS[0],tS[1],k*ry)+' '+c(pts.br,tT[0],tT[1],k*rx)+' '+P(pts.br)+
+      'Q'+f(L+w/2)+' '+f(B+bt)+' '+P(pts.bl)+
+      'C'+c(pts.bl,-tT[0],tT[1],k*rx)+' '+c(pts.lb,-tS[0],tS[1],k*ry)+' '+P(pts.lb)+
+      'Q'+f(L-bs)+' '+f(T+h/2)+' '+P(pts.lt)+
+      'C'+c(pts.lt,-tS[0],-tS[1],k*ry)+' '+c(pts.tl,-tT[0],-tT[1],k*rx)+' '+P(pts.tl)+'Z';
+  }
+  function drawTube(){
+    if(!bigMQ.matches) return;
+    const W=innerWidth,H=innerHeight,d=tube(W,H,16);
+    $('crtPath').setAttribute('d',d);
+    $('crtMask').setAttribute('d','M-200 -200H'+(W+200)+'V'+(H+200)+'H-200Z'+d);
+    $('crtInner').setAttribute('d',tube(W,H,22));
+    $('crtOuter').setAttribute('d',tube(W,H,13));
+  }
+  drawTube();
+  window.addEventListener('resize',drawTube);
+  if(bigMQ.addEventListener) bigMQ.addEventListener('change',drawTube);
   layout();
   window.addEventListener('resize',layout);
   window.addEventListener('orientationchange',()=>setTimeout(layout,250));
