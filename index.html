@@ -240,6 +240,18 @@ body.size-l .readout{--big:28px}
 .faces.has-sel .face:not(.sel) .die{animation:none}
 .face:active .key .die{animation:none;transform:translateY(1px)}
 .face.sel .key::before{border-color:var(--brass);border-top-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.5),0 4px 12px var(--glow-soft)}
+/* sparking cable in front of the screen: its flash and sparks show up as a reflection on the glass */
+.arc{position:absolute;width:0;height:0;pointer-events:none;z-index:4}
+.arc-glow{position:absolute;left:-150px;top:-150px;width:300px;height:300px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle,rgba(235,246,255,.75) 0,rgba(160,210,255,.4) 12%,rgba(110,180,255,.16) 30%,rgba(85,230,165,.04) 48%,transparent 68%)}
+.arc-core{position:absolute;left:-9px;top:-3px;width:18px;height:6px;border-radius:50%;opacity:0;background:#f4fbff;box-shadow:0 0 10px 4px rgba(190,225,255,.9),0 0 24px 10px rgba(120,190,255,.45);transform:rotate(var(--rot,0deg))}
+.arc-wash{position:fixed;inset:0;opacity:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at var(--ax) var(--ay),rgba(170,215,255,.16),transparent 65%)}
+.arc-spark{position:absolute;left:-1.5px;top:-1.5px;width:3px;height:3px;border-radius:50%;background:#fff3d6;opacity:0;
+  box-shadow:0 0 5px 2px rgba(255,205,130,.85),0 0 12px 4px rgba(255,170,80,.35);animation:sparkFly var(--dur) cubic-bezier(.15,.55,.35,1) var(--delay) both}
+@keyframes sparkFly{
+  0%{opacity:1;transform:translate(0,0) scale(1.2)}
+  45%{opacity:.95;transform:translate(calc(var(--dx) * .55),var(--up)) scale(1)}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.35)}}
 @media (max-height:620px){.key{max-width:42px}}
 @media (prefers-reduced-motion:reduce){.key .die{animation:none}}
 .face.sel .die{background:linear-gradient(155deg,var(--seal-hi),var(--brass) 60%,var(--phos-deep));box-shadow:inset 0 0 0 1px var(--seal-hi),0 0 14px var(--glow)}
@@ -962,6 +974,46 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   let flickT=null;
   function flicker(fast){ if(reduce||document.hidden) return; const b=document.body; clearTimeout(flickT); b.classList.remove('flicker','fast'); void b.offsetWidth; b.classList.toggle('fast',!!fast); b.classList.add('flicker'); flickT=setTimeout(()=>b.classList.remove('flicker','fast'),fast?400:750); }
   (function schedule(){ setTimeout(()=>{ flicker(); schedule(); }, 45000+Math.random()*30000); })();
+
+  // ---- sparking cable reflected on the glass: once in the first 15 s, then every 1–2 minutes ----
+  function cableSpark(){
+    if(reduce||document.hidden) return;
+    const glass=document.querySelector('.crt-glass'); if(!glass) return;
+    const fx=document.createElement('div'); fx.className='arc';
+    // the cable hangs somewhere in front of the lower part of the screen
+    const x=8+Math.random()*84, y=58+Math.random()*34;
+    fx.style.left=x+'%'; fx.style.top=y+'%'; fx.style.setProperty('--rot',(Math.random()*60-30).toFixed(0)+'deg');
+    fx.innerHTML='<div class="arc-wash"></div><div class="arc-glow"></div><div class="arc-core"></div>';
+    const wash=fx.querySelector('.arc-wash'); wash.style.setProperty('--ax',x+'%'); wash.style.setProperty('--ay',y+'%');
+    glass.appendChild(fx);
+    const glow=fx.querySelector('.arc-glow'), core=fx.querySelector('.arc-core');
+    // an irregular electrical flicker: bright pops separated by short dark gaps
+    const steps=[], n=9+Math.floor(Math.random()*6);
+    for(let i=0;i<n;i++){ const on=i%2===0||Math.random()<.25; steps.push([on?(.45+Math.random()*.55):Math.random()*.12, 30+Math.random()*90]); }
+    steps.push([0,0]);
+    let t=0, bursts=0;
+    steps.forEach(([o,d])=>{
+      setTimeout(()=>{
+        glow.style.opacity=o; core.style.opacity=Math.min(1,o*1.3); wash.style.opacity=o;
+        if(o>.7&&bursts<3){ bursts++; sprayl(fx,5+Math.floor(Math.random()*6)); }
+      },t);
+      t+=d;
+    });
+    setTimeout(()=>fx.remove(),t+1400);
+  }
+  function sprayl(fx,k){
+    for(let i=0;i<k;i++){
+      const s=document.createElement('i'); s.className='arc-spark';
+      const dx=(Math.random()*2-1)*(40+Math.random()*80);
+      s.style.setProperty('--dx',dx.toFixed(0)+'px');
+      s.style.setProperty('--up',(-(10+Math.random()*40)).toFixed(0)+'px');      // pops up first…
+      s.style.setProperty('--dy',(30+Math.random()*90).toFixed(0)+'px');         // …then falls
+      s.style.setProperty('--dur',(450+Math.random()*500).toFixed(0)+'ms');
+      s.style.setProperty('--delay',(Math.random()*60).toFixed(0)+'ms');
+      fx.appendChild(s);
+    }
+  }
+  setTimeout(()=>{ cableSpark(); (function again(){ setTimeout(()=>{ cableSpark(); again(); }, 60000+Math.random()*60000); })(); }, 2000+Math.random()*13000);
   // the action buttons above the dice (Sort, Re-roll 1s, Re-roll fails, Remove fails) also trigger the flicker
   document.querySelectorAll('.acts').forEach(r=>r.addEventListener('click',e=>{ if(e.target.closest('button')) flicker(true); /* disabled buttons never fire click, and the reroll handlers disable themselves before this runs */ }));
 
