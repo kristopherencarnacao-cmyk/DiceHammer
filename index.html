@@ -338,6 +338,34 @@ body.size-l .readout{--big:28px}
   .faces{gap:6px}
   .critrow .chk{width:18px;height:18px}
 }
+
+/* large landscape (tablets, laptops, desktops): more breathing room, a clearer CRT rim, and a sidebar that scales with the screen */
+@media (orientation:landscape) and (min-aspect-ratio:13/10) and (min-height:600px) and (min-width:1000px){
+  .app{--pad:clamp(24px,4vmin,52px);--side-min:360px;--u:clamp(0px,calc((100vh - 600px)*.04),16px);
+    grid-template-columns:var(--tray) minmax(var(--side-min),min(600px,40vw));column-gap:clamp(32px,4.5vw,72px);row-gap:calc(12px + var(--u));
+    padding:var(--pad) max(var(--pad),calc(env(safe-area-inset-right,0px) + 16px)) var(--pad) max(var(--pad),calc(env(safe-area-inset-left,0px) + 16px))}
+  .mast{padding-top:4px}
+  .eyebrow{font-size:calc(24px + var(--u)*.5)}
+  #menuBtn{height:calc(38px + var(--u)*.5);padding-inline:16px}
+  .readout{--big:calc(40px + var(--u));--lbl:12px;padding-block:calc(6px + var(--u)*.5);border-block:1px solid rgba(var(--rgb),.12)}
+  .step{width:calc(40px + var(--u)*.5);height:calc(40px + var(--u)*.5);font-size:20px}
+  .bar{align-self:center;gap:calc(12px + var(--u)*.6)}
+  .acts .btn{font-size:calc(11px + var(--u)*.08)}
+  .acts-crit .btn{white-space:nowrap}
+  .hint{margin-top:calc(10px + var(--u))}
+  .acts{gap:calc(8px + var(--u)*.25)}
+  .acts .btn{height:calc(46px + var(--u))}
+  .acts-crit .btn{height:calc(42px + var(--u)*.75)}
+  .hint{font-size:11px;margin-bottom:0}
+  .faces,.critrow{gap:calc(10px + var(--u)*.5)}
+  .key{max-width:calc(58px + var(--u)*1.5)}
+  .face span{font-size:13px}
+  .chk{width:calc(24px + var(--u)*.25);height:calc(24px + var(--u)*.25)}
+  .readout .step{flex:none}
+  .crt-glass{border-radius:clamp(28px,3.5vmin,48px);
+    box-shadow:0 0 0 80px #000,inset 0 0 0 2px rgba(var(--rgb),.22),inset 0 0 0 6px rgba(0,0,0,.9),inset 0 0 0 7px rgba(var(--rgb),.08),inset 0 0 40px 12px rgba(0,0,0,.9),inset 0 0 160px 30px rgba(0,0,0,.5),inset 0 0 60px rgba(var(--rgb),.06)}
+}
+@media (orientation:landscape) and (min-aspect-ratio:13/10) and (min-height:600px) and (min-width:1100px){.app{--side-min:420px}}
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-width:640px){.tog b{display:none}.acts-crit .btn{padding-inline:3px}}
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-height:300px){
   .readout .k-lbl{display:none}
@@ -584,7 +612,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     if(!landMQ.matches){ appEl.style.removeProperty('--tray'); return; }
     const cs=getComputedStyle(appEl);
     const h=appEl.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
-    const w=appEl.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-parseFloat(cs.columnGap||0)-300;
+    const w=appEl.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-parseFloat(cs.columnGap||0)-(parseFloat(cs.getPropertyValue('--side-min'))||300);
     appEl.style.setProperty('--tray',Math.max(150,Math.floor(Math.min(h,w)))+'px');
   }
   layout();
