@@ -288,6 +288,17 @@ body.size-l .readout{--big:28px}
 @media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
+/* landscape: tray on the left at full height, readout and controls in a column on the right, so the dice stay in view */
+@media (orientation:landscape) and (min-aspect-ratio:13/10){
+  .app{--tray:min(calc(100vh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),calc(100vw - 380px));max-width:none;display:grid;grid-template-columns:var(--tray) minmax(300px,500px);grid-template-rows:auto auto minmax(0,1fr);justify-content:center;column-gap:20px;row-gap:8px;
+    padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 12px)) max(18px,calc(env(safe-area-inset-right,0px) + 12px));padding-block:12px}
+  .stage{grid-column:1;grid-row:1/-1;width:var(--tray);height:var(--tray);align-self:center;min-width:0}
+  .mast{grid-column:2;grid-row:1}
+  .readout{grid-column:2;grid-row:2;--big:30px}
+  .bar{grid-column:2;grid-row:3;align-self:end;min-height:0;max-height:100%;overflow-y:auto;gap:8px}
+  .key{max-width:46px}
+  .eyebrow{font-size:20px}
+}
 @media (max-width:380px){.readout{--big:32px}.stats{gap:12px}}
 /* ---------- guide: a short animated slide show ---------- */
 /* header menu: Roll log and Guide */
