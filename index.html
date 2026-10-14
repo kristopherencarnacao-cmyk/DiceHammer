@@ -290,7 +290,7 @@ body.size-l .readout{--big:28px}
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
 /* landscape: tray on the left at full height, readout and controls in a column on the right, so the dice stay in view */
 @media (orientation:landscape) and (min-aspect-ratio:13/10){
-  .app{--tray:min(calc(100vh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),calc(100vw - 380px));max-width:none;display:grid;grid-template-columns:var(--tray) minmax(300px,500px);grid-template-rows:auto auto minmax(0,1fr);justify-content:center;column-gap:20px;row-gap:8px;
+  .app{--tray:min(calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)),calc(100vw - 380px));max-width:none;display:grid;grid-template-columns:var(--tray) minmax(300px,500px);grid-template-rows:auto auto minmax(0,1fr);justify-content:center;column-gap:20px;row-gap:8px;
     padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 12px)) max(18px,calc(env(safe-area-inset-right,0px) + 12px));padding-block:12px}
   .stage{grid-column:1;grid-row:1/-1;width:var(--tray);height:var(--tray);align-self:center;min-width:0}
   .mast{grid-column:2;grid-row:1}
@@ -298,6 +298,31 @@ body.size-l .readout{--big:28px}
   .bar{grid-column:2;grid-row:3;align-self:end;min-height:0;max-height:100%;overflow-y:auto;gap:8px}
   .key{max-width:46px}
   .eyebrow{font-size:20px}
+}
+/* short landscape screens (phones with browser bars): shrink the controls so nothing overlaps */
+@media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-height:430px){
+  .app{row-gap:6px;padding-block:8px}
+  .eyebrow{font-size:17px}
+  #menuBtn{height:30px}
+  .readout{--big:24px;--lbl:10px}
+  .readout .k-lbl{font-size:9px}
+  .step{width:30px;height:30px}
+  .bar{gap:6px}
+  .acts-crit .btn{height:28px;font-size:10px;letter-spacing:.04em;white-space:nowrap}
+  .acts-crit .ic{margin-right:4px}
+  .acts .btn{height:32px;font-size:10px}
+  .hint{display:none}
+  .key{max-width:36px}
+  .face span{font-size:10px}
+  .faces{gap:6px}
+  .critrow .chk{width:18px;height:18px}
+}
+@media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-width:640px){.tog b{display:none}.acts-crit .btn{padding-inline:3px}}
+@media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-height:300px){
+  .readout .k-lbl{display:none}
+  .key{max-width:30px}
+  .face span{display:none}
+  .acts .btn,.acts-crit .btn{height:26px}
 }
 @media (max-width:380px){.readout{--big:32px}.stats{gap:12px}}
 /* ---------- guide: a short animated slide show ---------- */
@@ -516,6 +541,21 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   // square tray sized to the space available
   function fit(){const s=Math.floor(Math.min(stage.clientWidth,stage.clientHeight)); grid.style.width=grid.style.height=s+'px';}
   new ResizeObserver(fit).observe(stage);
+  // landscape: measure the real space (browser bars and notches included) instead of trusting viewport units
+  const landMQ=window.matchMedia('(orientation:landscape) and (min-aspect-ratio:13/10)');
+  const appEl=document.querySelector('.app');
+  function layout(){
+    if(!landMQ.matches){ appEl.style.removeProperty('--tray'); return; }
+    const cs=getComputedStyle(appEl);
+    const h=appEl.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+    const w=appEl.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-parseFloat(cs.columnGap||0)-300;
+    appEl.style.setProperty('--tray',Math.max(150,Math.floor(Math.min(h,w)))+'px');
+  }
+  layout();
+  window.addEventListener('resize',layout);
+  window.addEventListener('orientationchange',()=>setTimeout(layout,250));
+  if(window.visualViewport) visualViewport.addEventListener('resize',layout);
+  if(landMQ.addEventListener) landMQ.addEventListener('change',layout);
 
   const SKULL='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M12 2a8 8 0 0 0-8 8c0 2.6 1.2 4.6 3 5.8V19a1 1 0 0 0 1 1h1v-2h1.5v2h3v-2H15v2h1a1 1 0 0 0 1-1v-3.2c1.8-1.2 3-3.2 3-5.8a8 8 0 0 0-8-8zM6.6 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0zM13 11a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0zM12 13.6l-1.3 2.3h2.6z"/></svg>';
   function clearFx(c){c.classList.remove('one','six','quiet'); c.style.removeProperty('--d'); c.querySelectorAll('.spark,.tw').forEach(x=>x.remove());}
