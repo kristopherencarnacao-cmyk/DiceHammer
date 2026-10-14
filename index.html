@@ -13,6 +13,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 <title>PhosphorDice</title>
+<script>try{var a=localStorage.getItem("dicehammer-theme");if(a&&a!=="green")document.documentElement.setAttribute("data-accent",a)}catch(e){}</script>
 <style>
 /* Layout: one-screen phosphor terminal — header strip, pool/result readout, bracketed 8×8 tray that fills spare height, control bar.
    Deliberately one look: cold black, ash-white text, phosphor green as the only accent, blood red for 1s. */
@@ -20,20 +21,28 @@
   color-scheme:dark;
   --ash:#05070a; --slab:#0e1217; --raise:#151a21; --ink:#dfe4ea; --muted:#8792a0; --rule:#232b35;
   --brass:#55e6a5; --seal-hi:#8af5c4; --phos-deep:#2a9d6c; --brass-soft:#0b231b; --phos-dim:#1f5a45; --phos-ink:#02140d;
+  --rgb:85,230,165; --rgb-hi:200,255,230;
   --danger:#e04652; --gold:#f5c451; --gold-glow:rgba(245,196,81,.45); --blood:#1f080c; --blood-hi:#45121a;
-  --glow:rgba(85,230,165,.45); --glow-soft:rgba(85,230,165,.18); --red-glow:rgba(224,70,82,.45); --deep-shadow:rgba(0,0,0,.6);
+  --glow:rgba(var(--rgb),.45); --glow-soft:rgba(var(--rgb),.18); --red-glow:rgba(224,70,82,.45); --deep-shadow:rgba(0,0,0,.6);
   --term:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono","Courier New",monospace;
 }
+/* colour themes (Menu → Theme). Green is the default; each theme swaps the phosphor colour, crits stay gold and fails stay red */
+:root[data-accent="cyan"]{--brass:#4fd8ff;--seal-hi:#a3ecff;--phos-deep:#1d8fb4;--brass-soft:#071d26;--phos-dim:#1b5266;--phos-ink:#021219;--rgb:79,216,255;--rgb-hi:205,245,255}
+:root[data-accent="blue"]{--brass:#7a96ff;--seal-hi:#b3c2ff;--phos-deep:#3d55c9;--brass-soft:#0d132e;--phos-dim:#2b3a7d;--phos-ink:#050a20;--rgb:122,150,255;--rgb-hi:215,224,255}
+:root[data-accent="violet"]{--brass:#b685ff;--seal-hi:#d8bdff;--phos-deep:#7140c9;--brass-soft:#190e2c;--phos-dim:#4b307c;--phos-ink:#10051f;--rgb:182,133,255;--rgb-hi:232,215,255}
+:root[data-accent="magenta"]{--brass:#ff63d4;--seal-hi:#ffa3e7;--phos-deep:#b8308f;--brass-soft:#2a0920;--phos-dim:#6e2458;--phos-ink:#1d0216;--rgb:255,99,212;--rgb-hi:255,214,243}
+:root[data-accent="orange"]{--brass:#ff8f3f;--seal-hi:#ffbd8a;--phos-deep:#c25a17;--brass-soft:#2a1305;--phos-dim:#6e3a17;--phos-ink:#1c0b01;--rgb:255,143,63;--rgb-hi:255,224,196}
+
 html,body{height:100%;overflow:hidden}
 /* no double-tap zoom: fast taps on dice and buttons stay taps */
 html,body,button,.app{touch-action:manipulation}
 body{background-color:var(--ash);color:var(--ink);font-family:var(--term);font-size:14px;-webkit-tap-highlight-color:transparent;
-  background-image:radial-gradient(ellipse 110% 70% at 50% 0%,rgba(60,140,110,.10),transparent 60%),radial-gradient(ellipse 120% 90% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
+  background-image:radial-gradient(ellipse 110% 70% at 50% 0%,rgba(var(--rgb),.10),transparent 60%),radial-gradient(ellipse 120% 90% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
 /* CRT: scanlines, vignette and a slow sweep, never blocking input */
 body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
   background:repeating-linear-gradient(180deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px),radial-gradient(ellipse 120% 100% at 50% 50%,transparent 60%,rgba(0,0,0,.42) 100%)}
 body::before{content:"";position:fixed;left:0;right:0;top:-20%;height:20%;pointer-events:none;z-index:9998;
-  background:linear-gradient(180deg,transparent,rgba(85,230,165,.035),transparent);animation:sweep 7s linear infinite}
+  background:linear-gradient(180deg,transparent,rgba(var(--rgb),.035),transparent);animation:sweep 7s linear infinite}
 @keyframes sweep{to{transform:translateY(600%)}}
 ::selection{background:var(--brass);color:var(--phos-ink)}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -43,7 +52,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* header strip */
 .mast{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.eyebrow{cursor:pointer;-webkit-user-select:none;user-select:none;font-size:24px;line-height:1;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(85,230,165,.8);white-space:nowrap}
+.eyebrow{cursor:pointer;-webkit-user-select:none;user-select:none;font-size:24px;line-height:1;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(var(--rgb),.8);white-space:nowrap}
 @media (max-width:380px){.eyebrow{font-size:20px;letter-spacing:.12em}}
 .cursor{display:inline-block;width:.55em;height:.9em;margin-left:.2em;background:var(--brass);vertical-align:-.1em;box-shadow:0 0 8px var(--glow);animation:blink 1.1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
@@ -80,7 +89,7 @@ body.size-l .readout{--big:28px}
 .big small{font-size:13px;font-weight:600;color:var(--muted);margin-left:4px;letter-spacing:.1em}
 #count{color:var(--ink)}
 .right{flex:1;min-width:0;text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
-#hits{color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(85,230,165,.8)}
+#hits{color:var(--brass);text-shadow:0 0 12px var(--glow),0 0 2px rgba(var(--rgb),.8)}
 .right .sub{height:var(--subh);line-height:var(--subh);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 /* the status line uses the full readout width (the pool side has nothing on that row) */
 .readout{position:relative}
@@ -121,23 +130,23 @@ body.size-l .readout{--big:28px}
     linear-gradient(var(--fr),var(--fr)) 0 100%/var(--bt) var(--bk) no-repeat,
     linear-gradient(var(--fr),var(--fr)) 100% 100%/var(--bk) var(--bt) no-repeat,
     linear-gradient(var(--fr),var(--fr)) 100% 100%/var(--bt) var(--bk) no-repeat,
-    linear-gradient(180deg,rgba(85,230,165,.035),transparent 40%),
+    linear-gradient(180deg,rgba(var(--rgb),.035),transparent 40%),
     var(--slab);
   border:1px solid var(--phos-dim);border-radius:0;
-  box-shadow:inset 0 0 22px rgba(85,230,165,.05),0 0 0 1px rgba(0,0,0,.6),0 12px 30px var(--deep-shadow)}
+  box-shadow:inset 0 0 22px rgba(var(--rgb),.05),0 0 0 1px rgba(0,0,0,.6),0 12px 30px var(--deep-shadow)}
 
 /* the tray */
 .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
 .grid{--n:8;display:grid;grid-template-columns:repeat(var(--n),1fr);grid-template-rows:repeat(var(--n),1fr);gap:4px;padding:8px;box-sizing:border-box;touch-action:none;user-select:none;-webkit-user-select:none;perspective:600px}
 .cell{position:relative;border-radius:12%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:6%;padding:18%;box-sizing:border-box;min-width:0;min-height:0;
-  background:radial-gradient(circle,var(--phos-dim) 0 1.5px,transparent 2px);box-shadow:inset 0 0 0 1px rgba(85,230,165,.06);transition:opacity .2s}
+  background:radial-gradient(circle,var(--phos-dim) 0 1.5px,transparent 2px);box-shadow:inset 0 0 0 1px rgba(var(--rgb),.06);transition:opacity .2s}
 .cell i{border-radius:50%;visibility:hidden}
 .cell b{display:none}
 .cell svg{position:absolute;inset:14%;width:72%;height:72%;visibility:hidden}
 
 /* a die: dark glass with phosphor pips */
-.cell.on,.die{background:linear-gradient(155deg,rgba(85,230,165,.15),rgba(85,230,165,.03) 55%,rgba(0,0,0,.3)),var(--raise);
-  box-shadow:inset 0 0 0 1px var(--phos-dim),inset 1px 1px 0 rgba(200,255,230,.09),inset -2px -3px 6px rgba(0,0,0,.45),0 3px 6px var(--deep-shadow)}
+.cell.on,.die{background:linear-gradient(155deg,rgba(var(--rgb),.15),rgba(var(--rgb),.03) 55%,rgba(0,0,0,.3)),var(--raise);
+  box-shadow:inset 0 0 0 1px var(--phos-dim),inset 1px 1px 0 rgba(var(--rgb-hi),.09),inset -2px -3px 6px rgba(0,0,0,.45),0 3px 6px var(--deep-shadow)}
 .cell.on i.s,.die i.s{visibility:visible}
 .cell.on i,.die i{background:var(--brass);box-shadow:0 0 4px var(--glow)}
 .grid.rolled .cell:not(.on){opacity:.3}
@@ -179,7 +188,7 @@ body.size-l .readout{--big:28px}
 .cell.spin{animation:glitchRoll .5s steps(1) infinite;animation-delay:var(--gd,0s)}
 /* rolling: a gentle signal-glitch. Small sideways jumps, one thin slice and a soft flicker, out of sync between dice */
 @keyframes glitchRoll{
-  0%{transform:none;clip-path:inset(0);filter:brightness(1.25);box-shadow:-1px 0 0 rgba(224,70,82,.3),1px 0 0 rgba(85,230,165,.35)}
+  0%{transform:none;clip-path:inset(0);filter:brightness(1.25);box-shadow:-1px 0 0 rgba(224,70,82,.3),1px 0 0 rgba(var(--rgb),.35)}
   25%{transform:translateX(-1px);filter:brightness(1)}
   50%{transform:translateX(1px);clip-path:inset(30% 0 22% 0);filter:brightness(1.4)}
   60%{clip-path:inset(0)}
@@ -191,11 +200,11 @@ body.size-l .readout{--big:28px}
 @keyframes glitch{0%{transform:translate(-3px,1px);filter:brightness(2)}20%{transform:translate(3px,-1px)}40%{transform:translate(-2px,0);filter:brightness(1.4)}60%{transform:translate(2px,1px)}80%{transform:translate(-1px,0)}100%{transform:none;filter:none}}
 
 /* control bar */
-.bar{display:flex;flex-direction:column;gap:10px;padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar{display:flex;flex-direction:column;gap:calc(10px + var(--grow,0px)*.5)}
 .acts{display:flex;gap:6px}
-.acts .btn{flex:1 1 0;min-width:0;height:40px;padding-inline:4px}
+.acts .btn{flex:1 1 0;min-width:0;height:calc(40px + var(--grow,0px));padding-inline:4px}
 /* crit tools: Lock crits toggle and Dupe crits, in gold to match the crit total */
-.acts-crit .btn{height:34px;border-color:rgba(245,196,81,.35);color:var(--gold)}
+.acts-crit .btn{height:calc(34px + var(--grow,0px));border-color:rgba(245,196,81,.35);color:var(--gold)}
 .acts-crit .btn:hover:not(:disabled){background:rgba(245,196,81,.08);border-color:var(--gold);box-shadow:0 0 12px var(--gold-glow)}
 .tog b{font-weight:700;margin-left:4px;opacity:.75}
 .tog[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1200;box-shadow:0 0 12px var(--gold-glow)}
@@ -226,9 +235,9 @@ body.size-l .readout{--big:28px}
 .face:active .die{transform:translateY(1px)}
 .face span{font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--muted)}
 /* target dice as keys: the die rises off a fixed base outline and presses back down, in a shuffled order */
-.key{position:relative;width:100%;max-width:54px;aspect-ratio:1}
+.key{position:relative;width:100%;max-width:calc(54px + var(--grow,0px));aspect-ratio:1}
 .key::before{content:"";position:absolute;inset:0;border-radius:12%;border:1px solid var(--phos-dim);border-top-color:transparent;
-  background:linear-gradient(180deg,transparent 40%,rgba(85,230,165,.10)),var(--ash);box-shadow:0 2px 0 rgba(0,0,0,.5)}
+  background:linear-gradient(180deg,transparent 40%,rgba(var(--rgb),.10)),var(--ash);box-shadow:0 2px 0 rgba(0,0,0,.5)}
 .key .die{position:relative;max-width:none;animation:keyBob 3.6s infinite;animation-delay:var(--kd,0s)}
 @keyframes keyBob{
   0%,56%,100%{transform:translateY(0)}
@@ -273,7 +282,7 @@ body.size-l .readout{--big:28px}
 .h-list li:first-child .h-item::before{top:50%}
 .h-list li:last-child .h-item::before{bottom:50%}
 .h-list li:only-child .h-item::before{display:none}
-.h-item:hover{background:rgba(85,230,165,.05)}
+.h-item:hover{background:rgba(var(--rgb),.05)}
 .h-item.cur{background:var(--brass-soft)}
 .h-dot{width:8px;height:8px;transform:rotate(45deg);border:2px solid var(--phos-dim);background:var(--slab);position:relative;z-index:1;justify-self:center}
 .h-item.cur .h-dot{background:var(--brass);border-color:var(--brass);box-shadow:0 0 8px var(--glow)}
@@ -292,12 +301,12 @@ body.size-l .readout{--big:28px}
 
 /* curved CRT glass: rounded bezel corners, barrel shading and a glass highlight (visual only, never blocks input) */
 .crt-glass{position:fixed;inset:0;pointer-events:none;z-index:10000;border-radius:clamp(18px,4vw,42px)/clamp(24px,5vw,56px);
-  box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 26px 6px rgba(0,0,0,.85),inset 0 0 120px 20px rgba(0,0,0,.45)}
+  box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(var(--rgb),.10),inset 0 0 26px 6px rgba(0,0,0,.85),inset 0 0 120px 20px rgba(0,0,0,.45)}
 .crt-glass .crt-bulge{position:absolute;inset:0;border-radius:inherit;
-  background:radial-gradient(ellipse 140% 120% at 50% 50%,transparent 58%,rgba(0,0,0,.28) 78%,rgba(0,0,0,.6) 100%),radial-gradient(ellipse 90% 70% at 50% 45%,rgba(85,230,165,.035),transparent 70%)}
+  background:radial-gradient(ellipse 140% 120% at 50% 50%,transparent 58%,rgba(0,0,0,.28) 78%,rgba(0,0,0,.6) 100%),radial-gradient(ellipse 90% 70% at 50% 45%,rgba(var(--rgb),.035),transparent 70%)}
 .crt-glass .crt-glare{position:absolute;inset:0;border-radius:inherit;
   background:radial-gradient(ellipse 55% 30% at 28% 10%,rgba(220,240,255,.07),transparent 70%),linear-gradient(115deg,transparent 62%,rgba(220,240,255,.025) 70%,transparent 78%)}
-@media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(85,230,165,.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
+@media(max-width:560px){.crt-glass{box-shadow:0 0 0 80px #000,inset 0 0 0 1px rgba(var(--rgb),.10),inset 0 0 18px 4px rgba(0,0,0,.85),inset 0 0 70px 12px rgba(0,0,0,.4)}}
 /* a little more room so nothing tucks under the curved rim */
 .app{padding-inline:max(18px,calc(env(safe-area-inset-left,0px) + 16px));padding-block:14px 16px}
 /* landscape: tray on the left at full height, readout and controls in a column on the right, so the dice stay in view */
@@ -342,6 +351,11 @@ body.size-l .readout{--big:28px}
 .menu-wrap{position:relative}
 .burger{display:inline-flex;flex-direction:column;gap:3px;margin-right:2px}.burger i{display:block;width:12px;height:2px;background:currentColor}
 #menuBtn[aria-expanded="true"]{background:var(--brass-soft);border-color:var(--brass);box-shadow:0 0 12px var(--glow-soft)}
+.m-theme{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 8px;border-top:1px dashed var(--phos-dim);font:600 11.5px/1 var(--term);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.m-sw{display:flex;gap:6px}
+.m-sw button{width:30px;height:30px;padding:0;border:1px solid rgba(255,255,255,.12);background:var(--c);box-shadow:inset 0 0 0 3px var(--slab);transition:transform .1s,box-shadow .15s}
+.m-sw button:hover{transform:scale(1.08)}
+.m-sw button[aria-checked="true"]{border-color:var(--c);box-shadow:inset 0 0 0 3px var(--slab),0 0 10px var(--c)}
 .m-size{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 8px;border-top:1px dashed var(--phos-dim);font:600 11.5px/1 var(--term);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
 .m-size small{display:block;margin-top:5px;font-size:9.5px;color:var(--muted);letter-spacing:.06em}
 .m-seg{display:flex;border:1px solid var(--phos-dim)}
@@ -363,7 +377,7 @@ body.size-l .readout{--big:28px}
 .g-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px 8px}
 .g-head h2{margin:4px 0 0;font:700 17px/1.25 var(--term);letter-spacing:.02em;color:var(--ink);text-wrap:balance}
 .g-x{margin-left:auto;flex:none;width:32px;height:32px;padding:0;font-size:14px}
-.g-slide{margin:4px 18px 0;height:160px;border:1px dashed var(--phos-dim);background:rgba(85,230,165,.03);position:relative;overflow:hidden;display:grid;place-items:center;animation:gIn .45s cubic-bezier(.2,.9,.25,1) both}
+.g-slide{margin:4px 18px 0;height:160px;border:1px dashed var(--phos-dim);background:rgba(var(--rgb),.03);position:relative;overflow:hidden;display:grid;place-items:center;animation:gIn .45s cubic-bezier(.2,.9,.25,1) both}
 .g-body{margin:12px 18px 4px;font-size:13.5px;line-height:1.55;color:var(--ink);min-height:7.75em;animation:gText .4s .12s both}
 .g-body b{color:var(--brass);font-weight:600}
 .g-cite{margin:0 18px;min-height:4.2em;font-size:10px;line-height:1.4;letter-spacing:.03em;color:var(--muted)}
@@ -421,7 +435,7 @@ body.size-l .readout{--big:28px}
 @media (prefers-reduced-motion:reduce){.guide:not([hidden]),.g-slide,.g-body,.ga,.ga *{animation:none!important}.gw-title{width:auto}}
 /* occasional CRT hiccup, about once a minute at random: heavy scanlines, a bright band rolling down and a brief jitter */
 .crt-band{position:fixed;left:0;right:0;top:-25%;height:22%;pointer-events:none;z-index:9997;opacity:0;
-  background:linear-gradient(180deg,transparent,rgba(85,230,165,.10) 45%,rgba(200,255,230,.16) 50%,rgba(85,230,165,.10) 55%,transparent)}
+  background:linear-gradient(180deg,transparent,rgba(var(--rgb),.10) 45%,rgba(var(--rgb-hi),.16) 50%,rgba(var(--rgb),.10) 55%,transparent)}
 body.flicker .crt-band{animation:bandRoll .7s linear both}
 @keyframes bandRoll{0%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(560%)}}
 body.flicker::after{background:repeating-linear-gradient(180deg,rgba(0,0,0,.5) 0 2px,transparent 2px 4px),radial-gradient(ellipse 120% 100% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);animation:scanJump .7s steps(1) both}
@@ -467,6 +481,7 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
       <div class="menu frame" id="menu" hidden>
         <button class="m-item" id="histBtn">Roll log <span class="n" id="histN">0</span></button>
         <button class="m-item" id="guideBtn" aria-haspopup="dialog">Guide <span class="n">?</span></button>
+        <div class="m-theme"><div>Theme</div><div class="m-sw" id="themeSw" role="radiogroup" aria-label="Colour theme"><button role="radio" data-accent="green" style="--c:#55e6a5" aria-label="Green"></button><button role="radio" data-accent="cyan" style="--c:#4fd8ff" aria-label="Cyan"></button><button role="radio" data-accent="blue" style="--c:#7a96ff" aria-label="Blue"></button><button role="radio" data-accent="violet" style="--c:#b685ff" aria-label="Violet"></button><button role="radio" data-accent="magenta" style="--c:#ff63d4" aria-label="Magenta"></button><button role="radio" data-accent="orange" style="--c:#ff8f3f" aria-label="Orange"></button></div></div>
         <div class="m-size"><div>Dice pool</div><div class="m-seg" id="sizeSeg" role="radiogroup" aria-label="Dice pool size"><button role="radio" data-size="s" aria-label="Small, 5 by 5">S</button><button role="radio" data-size="m" aria-label="Medium, 8 by 8">M</button><button role="radio" data-size="l" aria-label="Large, 12 by 12">L</button></div></div>
       </div>
     </div>
@@ -556,7 +571,16 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
   // landscape: measure the real space (browser bars and notches included) instead of trusting viewport units
   const landMQ=window.matchMedia('(orientation:landscape) and (min-aspect-ratio:13/10)');
   const appEl=document.querySelector('.app');
+  // portrait: when the screen is taller than the tray needs (e.g. saved to the Home Screen, no browser bars),
+  // grow the controls into the spare height instead of leaving a gap
+  function grow(){
+    appEl.style.removeProperty('--grow');
+    if(landMQ.matches) return;
+    const spare=stage.clientHeight-stage.clientWidth;
+    if(spare>24) appEl.style.setProperty('--grow',Math.min(16,Math.floor((spare-24)/8))+'px');
+  }
   function layout(){
+    grow();
     if(!landMQ.matches){ appEl.style.removeProperty('--tray'); return; }
     const cs=getComputedStyle(appEl);
     const h=appEl.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
@@ -968,6 +992,16 @@ body.flicker.fast .crt-band,body.flicker.fast::after,body.flicker.fast .app{anim
     buildGrid(); markSize(); fit();
     const n=Math.min(count||1,N*N); count=0; slots=[]; setCount(n);
   }
+  // colour theme: swaps the phosphor colour everywhere, remembered on this device
+  function markTheme(){ const cur=document.documentElement.getAttribute('data-accent')||'green'; $('themeSw').querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.accent===cur))); }
+  $('themeSw').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return; e.stopPropagation();
+    const a=b.dataset.accent;
+    if(a==='green') document.documentElement.removeAttribute('data-accent'); else document.documentElement.setAttribute('data-accent',a);
+    try{localStorage.setItem('dicehammer-theme',a);}catch(_){}
+    markTheme();
+  });
+  markTheme();
   $('sizeSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(b&&b.dataset.size!==size&&!busy){ pushUndo(); setSize(b.dataset.size); }});
 
   // random CRT flicker roughly once a minute (45–75 s apart), skipped when the tab is hidden or motion is reduced
