@@ -341,7 +341,7 @@ body.size-l .readout{--big:28px}
 
 /* large landscape (tablets, laptops, desktops): more breathing room, a clearer CRT rim, and a sidebar that scales with the screen */
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (min-height:600px) and (min-width:1000px){
-  .app{--pad:clamp(24px,4vmin,52px);--side-min:360px;--u:clamp(0px,calc((100vh - 600px)*.04),16px);
+  .app{--pad:calc(16px + clamp(34px,5.5vmin,64px));--side-min:360px;--u:clamp(0px,calc((100vh - 600px)*.04),16px);
     grid-template-columns:var(--tray) minmax(var(--side-min),min(600px,40vw));column-gap:clamp(32px,4.5vw,72px);row-gap:calc(12px + var(--u));
     padding:var(--pad) max(var(--pad),calc(env(safe-area-inset-right,0px) + 16px)) var(--pad) max(var(--pad),calc(env(safe-area-inset-left,0px) + 16px))}
   .mast{padding-top:4px}
@@ -362,8 +362,9 @@ body.size-l .readout{--big:28px}
   .face span{font-size:13px}
   .chk{width:calc(24px + var(--u)*.25);height:calc(24px + var(--u)*.25)}
   .readout .step{flex:none}
-  .crt-glass{border-radius:clamp(28px,3.5vmin,48px);
-    box-shadow:0 0 0 80px #000,inset 0 0 0 2px rgba(var(--rgb),.22),inset 0 0 0 6px rgba(0,0,0,.9),inset 0 0 0 7px rgba(var(--rgb),.08),inset 0 0 40px 12px rgba(0,0,0,.9),inset 0 0 160px 30px rgba(0,0,0,.5),inset 0 0 60px rgba(var(--rgb),.06)}
+  /* CRT bubble: inset 16px from the browser edge with wide, oval corners like a curved tube */
+  .crt-glass{inset:16px;border-radius:7% / 10%;
+    box-shadow:0 0 0 200px #000,0 0 0 1px rgba(var(--rgb),.10),inset 0 0 0 2px rgba(var(--rgb),.22),inset 0 0 0 6px rgba(0,0,0,.9),inset 0 0 0 7px rgba(var(--rgb),.08),inset 0 0 40px 12px rgba(0,0,0,.9),inset 0 0 160px 30px rgba(0,0,0,.5),inset 0 0 60px rgba(var(--rgb),.06)}
 }
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (min-height:600px) and (min-width:1100px){.app{--side-min:420px}}
 @media (orientation:landscape) and (min-aspect-ratio:13/10) and (max-width:640px){.tog b{display:none}.acts-crit .btn{padding-inline:3px}}
